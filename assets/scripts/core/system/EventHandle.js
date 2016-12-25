@@ -86,7 +86,7 @@ cc.Class({
         let playerId = detail.playerId;
         let destPos = detail.destPos;
         let direction = detail.direction;
-        this.game._switchScene(destMapId, playerId, destPos, direction, false);
+        this.game.switchScene(destMapId, playerId, destPos, direction, false);
     },
     /**
      * Type 5

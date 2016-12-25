@@ -453,7 +453,7 @@ cc.Class({
         this.playerId = currentPlayerId;
         var playerPos = playerData.playerPos;
         var playerDirection = playerData.playerDirection;
-        this._switchScene(mapId, currentPlayerId, playerPos, playerDirection, true);
+        this.switchScene(mapId, currentPlayerId, playerPos, playerDirection, true);
     },
 
     /**
@@ -465,47 +465,6 @@ cc.Class({
      * @param {Number} direction
      */
     switchScene: function(destMapId, playerId, destPos, direction, load) {
-        //如果不是读档，则存储当前地图信息
-        if (!load) {
-            var dynamicActor = [];
-            var i = 0;
-            for (var id in this.actorManager.dynamicActor) {
-                dynamicActor[i] = {
-                    id: id,
-                    active: this.actorManager.getTarget(id).node.active,
-                    pos: this.actorManager.getTarget(id).getPos()
-                };
-                i++;
-            }
-            this.mapInfo[this.currentMapId] = {
-                mapId: this.currentMapId,
-                dynamicActor: dynamicActor,
-                treasureList: this.treasureList
-            }
-        }
-        //读取即将载入的地图信息
-        if (this.mapInfo[destMapId] != null) {
-            this.dynamicActor = this.mapInfo[destMapId].dynamicActor;
-            this.treasureList = this.mapInfo[destMapId].treasureList;
-        } else {
-            //还未载入过则初始化一下
-            this.dynamicActor = [];
-            this.treasureList = [];
-        }
-        this.loading.parent.active = true;
-        this.loading.getComponent(cc.Animation).play()
-        this.previousMapId = this.currentMapId;
-        this.mapLoaded = false;
-        this.prePlayerId = this.playerId;
-        this.playerId = playerId;
-        this.loadPos = destPos;
-        this.loadDirection = direction;
-        this.hideUI(["TouchPanel", "MainButton", "GameMenu", "Hud", "BattleButton"], true, false);
-        this.audioManager.pauseBGM();
-        cc.director.loadScene(MapList[destMapId]);
-    },
-
-    _switchScene: function(destMapId, playerId, destPos, direction, load) {
         //如果不是读档，则存储当前地图信息
         if (!load) {
             this.saveMapInfo();

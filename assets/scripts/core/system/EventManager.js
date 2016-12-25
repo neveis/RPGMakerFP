@@ -1,31 +1,5 @@
 var GameEvent = require("GameEvent");
 
-const EventType = cc.Enum({
-    Dialogue: 1,
-    Shop: 2,
-    SwitchScene: 3,
-    ScrollMap: 5,
-    MoveActor: 6,
-    ShowActor: 7,
-    SetDone: 8,
-    SetActorPos: 9,
-    ShowActorBalloon: 10,
-    ShowItemBox: 11,
-    AddItem: 12,
-    ShowMessage: 13,
-    HideUI: 14,
-    SetSwitcher: 15,
-    MapAnimation: 16,
-    DoorAnimation: 17,
-    MoveByAStar: 18,
-    GetTreasure: 19,
-    AudioEffect: 20,
-    Option: 21,
-    Delay: 22,
-    FadeIn: 23,
-    Task: 24
-});
-
 cc.Class({
     extends: cc.Component,
 
@@ -37,9 +11,6 @@ cc.Class({
     onLoad: function() {
         var self = this;
         this.game = this.node.getComponent('Game');
-        //this.dialogue = this.dialogueNode.getComponent("DialogueBox");
-        //this.playerData = this.node.getComponent("PlayerData");
-        this.eventHandle = this.node.getComponent('EventHandle');
         this.eventSwitcher = [];
         this.eventList = {};
         cc.log('event init');
@@ -63,26 +34,6 @@ cc.Class({
         }
 
         this.eventList[eventId] = gameEvent;
-    },
-    /**
-     * !#zh
-     * 添加地图事件（除NPC事件）
-     * @param {String} mapId 事件根据地图ID分类
-     * @return {Array} 地图销毁时需要删除的事件
-     */
-    initMapEvent: function(mapId) {
-        if (mapId in this.eventInfo) {
-            //读取该地图的所有事件
-            var mapEvent = this.eventInfo[mapId];
-            var delList = []
-                //遍历该地图下的所有时间，并添加到事件列表
-            for (var eventId in mapEvent) {
-                this.eventList[eventId] = this.addEventFromObject(mapId, eventId);
-                delList.push(eventId);
-            }
-            return delList;
-        } else
-            return [];
     },
 
 
@@ -140,7 +91,6 @@ cc.Class({
                     return true;
                 else
                     return false;
-
         }
     },
 
@@ -180,8 +130,4 @@ cc.Class({
         if (eventId in this.eventList)
             delete this.eventList[eventId];
     },
-    // called every frame, uncomment this function to activate update callback
-    // update: function (dt) {
-
-    // },
 });
