@@ -53,7 +53,7 @@ cc.Class({
                         actor.registerEvent();
                     }
                     if (actor.dynamic) {
-                        this.dynamicActorList.push(actor);
+                        self.dynamicActorList.push(actor);
                     }
                 }
 

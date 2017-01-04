@@ -11,7 +11,7 @@ cc.Class({
     onLoad: function() {
         var self = this;
         this.game = this.node.getComponent('Game');
-        this.eventSwitcher = [];
+        this.eventSwitcher = {};
         this.eventList = {};
         cc.log('event init');
 

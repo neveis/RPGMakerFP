@@ -10,6 +10,7 @@ cc.Class({
 
     // use this for initialization
     onLoad: function() {
+        this.gameNode = this.gameNode || cc.find('Game')
         this.game = this.gameNode.getComponent("Game");
         this.eventManager = this.gameNode.getComponent("EventManager");
         this.node.on(cc.Node.EventType.TOUCH_START, function(event) {
@@ -25,8 +26,4 @@ cc.Class({
         }, this);
     },
 
-    // called every frame, uncomment this function to activate update callback
-    // update: function (dt) {
-
-    // },
 });

@@ -2,7 +2,7 @@ cc.Class({
     extends: cc.Component,
 
     properties: {
-        balloonAtlas: {
+        emotionAtlas: {
             default: null,
             type: cc.SpriteAtlas
         },
@@ -32,24 +32,10 @@ cc.Class({
         });
     },
 
-    createBalloonClip: function() {
-        var frame;
-        for (var i = 0; i < 10; i++) {
-            frame = [];
-            for (var j = 1; j < 9; j++) {
-                if (i == 0)
-                    var spriteName = "balloon_0" + j.toString();
-                else
-                    var spriteName = "balloon_" + (i * 8 + j).toString();
-                frame.push(this.balloonAtlas.getSpriteFrame(spriteName));
-            }
-            this.balloonClip.push(cc.AnimationClip.createWithSpriteFrames(frame, 4));
-        }
-        //cc.log("ballon",this.balloonClip);
+    getEmotionAtlas: function() {
+        return this.emotionAtlas;
     },
-    getBalloonClip: function(balloonIndex) {
-        return this.balloonClip[balloonIndex];
-    },
+
     getItemSprite: function(itemId) {
         var name = "IconSet_" + itemId;
         var spriteFrame = this.itemAtlas.getSpriteFrame(name);

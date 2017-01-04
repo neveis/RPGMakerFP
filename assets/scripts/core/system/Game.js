@@ -49,7 +49,7 @@ cc.Class({
         //与地图相关的信息
         this.mapInfo = {};
         //动态角色
-        this.dynamicActor = [];
+        this.dynamicActorList = [];
 
         this.treasureList = [];
 
@@ -190,6 +190,13 @@ cc.Class({
 
             this.currentMapId = this.scene.map.mapId;
             //设置动态角色状态 *在scene中设置
+            for (let i = 0; i < this.dynamicActorList; i++) {
+                let actorTarget = this.scene.getActorTarget(this.dynamicActorList[i].actorId);
+                actorTarget.setPos(this.dynamicActorList[i].pos);
+                actorTarget.node.active = this.dynamicActorList[i].active;
+            }
+
+            this.hideUI(["default"], false, false);
 
             //检测是否有初始事件
             if (this.eventManager.checkEventById(this.currentMapId, 0)) {
@@ -244,40 +251,6 @@ cc.Class({
         this.player = this.actorManager.getTarget(this.playerId);
         this.playerAnim = this.player.node.getComponent(cc.Animation);
         this.hud.setAvatar(this.playerId);
-    },
-
-    /**
-     * !#zh
-     * 显示气球表情
-     * @param {Number} actorId
-     * @param {String} balloonName
-     * @param {Boolean} wait
-     * @param {Boolean} nextEvent
-     */
-    showActorBalloon: function(actorId, balloonName, wait, nextEvent) {
-        //var actorId = detail.actorId;
-        var actorTarget = this.actorManager.getTarget(actorId.toString());
-        //actorTarget.showBalloon(detail.balloonName, detail.wait, nextEvent);
-        actorTarget.showBalloon(balloonName, wait, nextEvent);
-    },
-
-    getTreasure: function(target, typeList, idList, numList, nextEvent) {
-        //偷懒利用事件来完成效果，打死我吧！因此nextEvent无用
-        for (let i = 0; i < typeList.length; i++) {
-            this.addItem(typeList[i], idList[i], numList[i], false);
-            //显示效果反过来
-            this.eventManager.currentEvent.unshift({
-                "detail": {
-                    "type": typeList[typeList.length - 1 - i],
-                    "itemId": idList[typeList.length - 1 - i],
-                    "count": numList[typeList.length - 1 - i]
-                },
-                "type": 11
-            });
-        }
-        target.getTreasure();
-        this.playAudioEffect("Shop", 0, false);
-        this.eventManager.nextEventStart();
     },
 
     /**

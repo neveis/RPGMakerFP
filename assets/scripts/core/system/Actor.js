@@ -24,11 +24,6 @@ cc.Class({
         isPlayer: false,
         dynamic: false,
         counter: [cc.Integer],
-        hasEvent: false,
-        balloonNode: {
-            default: null,
-            type: cc.Node
-        },
         mapNode: {
             default: null,
             type: cc.Node
@@ -56,18 +51,19 @@ cc.Class({
 
         this.defaultSprite = this.node.getComponent(cc.Sprite).spriteFrame;
         this.anim = this.node.getComponent(cc.Animation);
+        if (!this.anim) {
+            this.anim = this.node.addComponent(cc.Animation);
+        }
 
         //矫正位置,保证在格点上
         this.setPos(cc.p(Math.round(this.node.x / MoveStep) * MoveStep, Math.round(this.node.y / MoveStep) * MoveStep));
         this.realTilePos = this.getTilePos();
-        //创建表情动画
-        //this.BalloonFX = this.balloonNode.getComponent("BalloonFX");
-        //this.BalloonFX.createAnimationClip();
 
-        //this.node.getChildByName("Balloon").active = true;
-        //this.showBalloon("happy", false, false);
         //创建行走动画
         this.createAnimationClip();
+
+        //创建表情动画
+        this.emotionNode = this.createEmotion();
 
         this.event = null;
         this.initialized = true;
@@ -168,6 +164,7 @@ cc.Class({
         }
         this.node.x = pos.x;
         this.node.y = pos.y + ActorOffset;
+        this.node.setLocalZOrder(this.getTilePosY());
         if (direction != null) {
             var actorSprite = this.node.getComponent(cc.Sprite);
             switch (direction) {
@@ -271,6 +268,24 @@ cc.Class({
             }
         }
     },
+
+    /**
+     * 创建显示表情的节点
+     */
+    createEmotion: function() {
+        let emotionNode = new cc.Node('Emotion');
+        emotionNode.addComponent(cc.Sprite);
+        let animation = emotionNode.addComponent(cc.Animation);
+        emotionNode.setAnchorPoint(0, 0);
+        emotionNode.setPosition(0, this.node.height)
+        emotionNode.active = false;
+        let emotionFX = emotionNode.addComponent('EmotionFX');
+        emotionFX.createAnimationClip();
+        this.node.addChild(emotionNode);
+
+        return emotionNode;
+    },
+
     facePlayer: function() {
         var actorSprite = this.node.getComponent(cc.Sprite);
         //与玩家方向相反
@@ -632,40 +647,27 @@ cc.Class({
         this.node.getComponent(cc.Sprite).spriteFrame = this.actorAtlas.getSpriteFrame(face);
     },
 
-    showBalloon: function(balloonName, wait, nextEvent) {
-        var balloonAnim = this.balloonNode.getComponent(cc.Animation);
-        var animState = balloonAnim.getAnimationState(balloonName);
-        this.balloonNode.active = true;
-        if (nextEvent) {
-            if (wait) {
-                this.node.runAction(
-                    cc.sequence(
-                        cc.callFunc(function() { balloonAnim.play(balloonName) }),
-                        //cc.delayTime(animState.duration),
-                        cc.delayTime(animState.duration + 0.2),
-                        cc.callFunc(this.eventManager.nextEventStart, this.eventManager)
-                    )
+    /**
+     * 显示表情
+     */
+    showEmotion: function(emotionName, wait, cb) {
+        let animation = this.emotionNode.getComponent(cc.Animation);
+        let animState = animation.getAnimationState(emotionName);
+        this.emotionNode.active = true;
+        if (wait) {
+            this.node.runAction(
+                cc.sequence(
+                    cc.callFunc(function() { animation.play(emotionName) }),
+                    cc.delayTime(animState.duration + 0.2),
+                    cc.callFunc(function() { if (cb) cb.next() })
                 )
-            } else {
-                balloonAnim.play(balloonName);
-                this.eventManager.nextEventStart();
-            }
+            );
         } else {
-            if (wait) {
-                this.node.runAction(
-                    cc.sequence(
-                        cc.callFunc(function() { balloonAnim.play(balloonName) })
-                    )
-                )
-            } else {
-                balloonAnim.play(balloonName);
-            }
+            animation.play(emotionName);
+            if (cb) cb.next();
         }
     },
-    // called every frame, uncomment this function to activate update callback
-    // update: function (dt) {
 
-    // },
     onDisable: function() {
         this.removeEvent()
     },

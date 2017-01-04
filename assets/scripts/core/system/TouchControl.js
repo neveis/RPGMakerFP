@@ -26,14 +26,15 @@ cc.Class({
             type: cc.Node
         },
         speed: 300,
+        _listener: []
     },
 
     // use this for initialization
     onLoad: function() {
-        this.listener = [];
+        //this.listener = [];
         var self = this;
         //cc.game.addPersistRootNode(this.node);
-        self.maxRadius = self.node.getContentSize().height / 2;
+        self.maxRadius = self.controlPanel.getContentSize().height / 2;
         self.originPos = this.controlNode.position;
         self.moveToPos = cc.p(0, 0);
         self.isMoving = false;
@@ -100,12 +101,12 @@ cc.Class({
     },
 
     addListener: function(comp) {
-        this.listener.push(comp);
+        this._listener.push(comp);
     },
 
     broadcast: function() {
-        for (let i = 0; i < this.listener.length; i++) {
-            this.listener[i].emit('touch-control', {
+        for (let i = 0; i < this._listener.length; i++) {
+            this._listener[i].emit('touch-control', {
                 moveDirection: this.actorDirection,
                 moveState: this.moveState
             });

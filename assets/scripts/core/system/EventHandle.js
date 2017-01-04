@@ -13,7 +13,7 @@ const EventType = cc.Enum({
     ShowActor: 7,
     SetEventDone: 8,
     SetActorPos: 9,
-    ShowActorBalloon: 10,
+    ShowEmotion: 10,
     ShowItemMsg: 11,
     AddItem: 12,
     ShowMessage: 13,
@@ -60,6 +60,13 @@ cc.Class({
     // use this for initialization
     onLoad: function() {
 
+    },
+
+    /**
+     * checkSwitcher
+     */
+    checkSwitcher: function(switcher) {
+        return this.eventManager.eventSwitcher[switcher];
     },
 
     /**
@@ -139,6 +146,17 @@ cc.Class({
         let pos = detail.pos;
         let direction = detail.direction;
         let actorTarget = this.game.scene.getActorTarget(actorId);
+    },
+
+    /**
+     * Type 10
+     */
+    showEmotion: function(detail, gameEvent) {
+        let actorId = detail.actorid.toString();
+        let emotionName = detail.emotionName;
+        let wait = detail.wait;
+        let target = this.game.scene.getActorTarget(actorId);
+        target.showEmotion(emotionName, wait, gameEvent);
     },
 
     /**
@@ -326,6 +344,9 @@ cc.Class({
                 break;
             case EventType.SetActorPos:
                 this.setActorPos(detail, gameEvent);
+                break;
+            case EventType.ShowEmotion:
+                this.showEmotion(detail, gameEvent)
                 break;
             case EventType.ShowItemMsg:
                 this.showItemMsg(detail, gameEvent);

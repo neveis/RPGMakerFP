@@ -21,7 +21,7 @@ cc.Class({
 
     startGame: function() {
         //cc.director.loadScene("Opening");
-        this.game.switchScene("1", 1, cc.p(384, 224), 6, true);
+        this.game.switchScene("1", 1, cc.p(384, 256), 6, true);
     },
 
     exitGame: function() {

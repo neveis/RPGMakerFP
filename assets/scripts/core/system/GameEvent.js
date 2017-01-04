@@ -9,15 +9,35 @@ var gameEvent = cc.Class({
         this.event = {};
     },
     properties: {
-
+        loop: false,
+        repeatCount: 0,
+        _repeatCount: 0
     },
 
     setEventByObj: function(event) {
         this.event = event;
+        this.loop = event.loop;
+        if (event.repeatCount && event.repeatCount === 'Infinity') {
+            this.repeatCount = Infinity;
+        } else if (event.repeatCount) {
+            this.repeatCount = event.repeatCount - 1;
+        } else {
+            this.repeatCount = 0;
+        }
+        this._repeatCount = this.repeatCount;
     },
 
     setEventByStr: function(eventStr) {
         this.event = JSON.parse(eventStr);
+        this.loop = event.loop;
+        if (event.repeatCount && event.repeatCount === 'Infinity') {
+            this.repeatCount = Infinity;
+        } else if (event.repeatCount) {
+            this.repeatCount = event.repeatCount - 1;
+        } else {
+            this.repeatCount = 0;
+        }
+        this._repeatCount = this.repeatCount;
     },
 
     start: function() {
@@ -40,6 +60,7 @@ var gameEvent = cc.Class({
             for (let j = 0; j < subEvents.length; j++) {
                 this.subEventSeq.push(subEvents[j]);
             }
+            break;
         }
         if (!this.subEventSeq.length) {
             console.log('event sequence is empty')
@@ -59,6 +80,17 @@ var gameEvent = cc.Class({
                     this.callback.next();
                 }
             }
+            if (this.loop) {
+                console.log(this._repeatCount);
+                if (this._repeatCount) {
+                    this._repeatCount--;
+                    setTimeout(function() {
+                        this.start();
+                    }.bind(this), 0);
+                } else {
+                    this._repeatCount = this.repeatCount;
+                }
+            }
             return;
         }
         let subEvent = this.subEventSeq.shift();
@@ -68,7 +100,7 @@ var gameEvent = cc.Class({
     checkSwitcher: function(switcher) {
         if (switcher == null) return true;
         for (let i = 0; i < switcher.length; i++) {
-            if (!this.handle.eventSwicher[switcher[i]]) {
+            if (!this.handle.checkSwitcher(switcher[i])) {
                 return false;
             }
         }
