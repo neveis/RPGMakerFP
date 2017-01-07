@@ -47,7 +47,7 @@ cc.Class({
         this.gameNode = cc.find("Game");
         this.game = this.gameNode.getComponent("Game");
         this.eventManager = this.gameNode.getComponent("EventManager");
-        //this.cache = this.gameNode.getComponent("Cache");
+        this.cache = this.gameNode.getComponent("Cache");
 
         this.defaultSprite = this.node.getComponent(cc.Sprite).spriteFrame;
         this.anim = this.node.getComponent(cc.Animation);
@@ -106,16 +106,16 @@ cc.Class({
             let triggerPos;
             switch (this.counter[i]) {
                 case 2:
-                    triggerPos = cc.p(self.getTilePosX(), self.getTilePosY() + GridPerStep);
+                    triggerPos = cc.p(this.getTilePosX(), this.getTilePosY() + GridPerStep);
                     break;
                 case 4:
-                    triggerPos = cc.p(self.getTilePosX() - GridPerStep, self.getTilePosY());
+                    triggerPos = cc.p(this.getTilePosX() - GridPerStep, this.getTilePosY());
                     break;
                 case 6:
-                    triggerPos = cc.p(self.getTilePosX() + GridPerStep, self.getTilePosY());
+                    triggerPos = cc.p(this.getTilePosX() + GridPerStep, this.getTilePosY());
                     break;
                 case 8:
-                    triggerPos = cc.p(self.getTilePosX(), self.getTilePosY() - GridPerStep);
+                    triggerPos = cc.p(this.getTilePosX(), this.getTilePosY() - GridPerStep);
                     break;
             }
             let eventId = this.eventManager.generateEventId(this.map.mapId, triggerPos);
@@ -138,16 +138,16 @@ cc.Class({
             let triggerPos;
             switch (this.counter[i]) {
                 case 2:
-                    triggerPos = cc.p(self.getTilePosX(), self.getTilePosY() + GridPerStep);
+                    triggerPos = cc.p(this.getTilePosX(), this.getTilePosY() + GridPerStep);
                     break;
                 case 4:
-                    triggerPos = cc.p(self.getTilePosX() - GridPerStep, self.getTilePosY());
+                    triggerPos = cc.p(this.getTilePosX() - GridPerStep, this.getTilePosY());
                     break;
                 case 6:
-                    triggerPos = cc.p(self.getTilePosX() + GridPerStep, self.getTilePosY());
+                    triggerPos = cc.p(this.getTilePosX() + GridPerStep, this.getTilePosY());
                     break;
                 case 8:
-                    triggerPos = cc.p(self.getTilePosX(), self.getTilePosY() - GridPerStep);
+                    triggerPos = cc.p(this.getTilePosX(), this.getTilePosY() - GridPerStep);
                     break;
             }
             let eventId = this.eventManager.generateEventId(this.map.mapId, triggerPos);
@@ -241,6 +241,7 @@ cc.Class({
         return cc.p(x, y);
     },
     createAnimationClip: function() {
+        if (!this.actorAtlas) return;
         var frame;
         for (var i = 0; i < 4; i++) {
             frame = [];
@@ -447,7 +448,8 @@ cc.Class({
      * 确认键触发
      */
     checkEventThere: function() {
-        let PosInTile = this.PosPixelToTile(this.getForwardPos(this.direction))
+        let PosInTile = this.PosPixelToTile(this.getForwardPos(this.direction));
+        console.log('there ' + PosInTile);
         let eventId = this.eventManager.getEventId(this.map.mapId, PosInTile);
         if (this.eventManager.checkEventById(eventId, 1)) {
             //start event
@@ -495,6 +497,23 @@ cc.Class({
             case Direction.Right:
                 deltaPos = cc.v2(step * MoveStep, 0);
                 break;
+            case Direction.LeftDown:
+                deltaPos = cc.v2(-step * MoveStep, -step * MoveStep);
+                //动画使用左动画
+                direction = Direction.Left;
+                break;
+            case Direction.RightDown:
+                deltaPos = cc.v2(step * MoveStep, -step * MoveStep);
+                direction = Direction.Right;
+                break;
+            case Direction.LeftUp:
+                deltaPos = cc.v2(-step * MoveStep, step * MoveStep);
+                direction = Direction.Left;
+                break;
+            case Direction.RightUp:
+                deltaPos = cc.v2(step * MoveStep, step * MoveStep);
+                direction = Direction.Right;
+                break;
         }
         //两种情况，移动结束后再运行下一个事件 或者 移动的同时运行下一个事件。
         if (wait) {
@@ -504,9 +523,9 @@ cc.Class({
                     cc.moveBy(MoveTime * step / speed, deltaPos)),
                 cc.spawn(
                     cc.callFunc(this.stopAnim, this, direction),
-                    cc.callFunc(this.registerEvent, this),
-                    cc.callFunc(function() { if (cb) cb.next() })
-                )
+                    cc.callFunc(this.registerEvent, this)
+                ),
+                cc.callFunc(function() { if (cb) cb.next() })
             ));
         } else {
             this.node.runAction(cc.sequence(
@@ -541,7 +560,7 @@ cc.Class({
         for (let i = 1; i < paths.length; i++) {
             deltaPos = cc.pSub(paths[i], paths[i - 1]);
             oldDirection = newDirection;
-            cc.log(paths[i]);
+            //cc.log(paths[i]);
             if (deltaPos.x == GridPerStep) {
                 newDirection = Direction.Right;
                 pos = cc.p(MoveStep, 0);
@@ -666,6 +685,32 @@ cc.Class({
             animation.play(emotionName);
             if (cb) cb.next();
         }
+    },
+
+    /**
+     * 更换行走图
+     */
+    changeAtlas: function(atlasPath, cb) {
+        let self = this;
+        //动态加载新图集
+        cc.loader.loadRes(atlasPath, cc.SpriteAtlas, function(err, atlas) {
+            self.actorAtlas = atlas;
+            self.cache.releaseResList.push(atlasPath);
+            self.createAnimationClip();
+            if (cb) cb.next();
+        });
+        //删除原动画
+        for (let i = 0; i < ClipName.length; i++) {
+            this.anim.removeClip(ClipName[i], true);
+        }
+    },
+
+    /**
+     * 更换图像
+     */
+    changeSprite: function(spriteName, cb) {
+        this.node.getComponent(cc.Sprite).spriteFrame = this.actorAtlas.getSpriteFrame(spriteName);
+        if (cb) cb.next();
     },
 
     onDisable: function() {

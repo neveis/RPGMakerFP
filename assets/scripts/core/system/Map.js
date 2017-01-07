@@ -33,10 +33,10 @@ cc.Class({
 
         //暂时取巧做法，为了动态生成不可行走区域
         this._blockLayer = this._tiledMap.getLayer('block');
-        //手机获取不了gid 暂为253
+        //手机获取不了gid
         //依然有问题
-        this.blockTileGid = this._blockLayer.getTileSet().firstGid;
-        /*
+        //this.blockTileGid = this._blockLayer.getTileSet().firstGid;
+
         if (this.mapId === "1")
             this.blockTileGid = 253;
         else if (this.mapId === "2")
@@ -51,7 +51,7 @@ cc.Class({
             this.blockTileGid = 521;
         else if (this.mapId == "7")
             this.blockTileGid = 521;
-        */
+
         this.initMap();
     },
     /**

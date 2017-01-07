@@ -10,7 +10,11 @@ const Direction = cc.Enum({
     Up: 8,
     Right: 6,
     Down: 2,
-    Left: 4
+    Left: 4,
+    LeftDown: 1,
+    RightDown: 3,
+    LeftUp: 7,
+    RightUp: 9
 });
 const EventType = cc.Enum({
     Dialogue: 1,

@@ -21,7 +21,7 @@ cc.Class({
         this.dynamicActorList = [];
         let actors = this.actorNode.children;
         for (let i = 0; i < actors.length; i++) {
-            let target = actors[i].getComponent('Actor') || actors[i].getComponent('Player');
+            let target = actors[i].getComponent('Actor');
             this.actorList[target.actorId] = target;
         }
     },

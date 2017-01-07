@@ -107,8 +107,13 @@ var gameEvent = cc.Class({
         return true;
     },
 
-    checkCondition: function(condition) {
-        if (condition == null) return true;
+    checkCondition: function(conditions) {
+        if (conditions == null) return true;
+        for (let i = 0; i < conditions.length; i++) {
+            if (!this.handle.conditionInterpreter(conditions[i])) {
+                return false
+            }
+        }
         return true;
     },
 

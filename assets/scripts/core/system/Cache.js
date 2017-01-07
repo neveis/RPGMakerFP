@@ -15,8 +15,8 @@ cc.Class({
 
     // use this for initialization
     onLoad: function() {
+        this.releaseResList = [];
         this.balloonClip = [];
-        //this.createBalloonClip();
         this.itemTable = {};
         var self = this;
         //读取道具列表到缓存中
@@ -56,4 +56,10 @@ cc.Class({
         return this.itemTable[itemId];
     },
 
+    releaseRes: function() {
+        for (let i = 0; i < this.releaseResList.length; i++) {
+            cc.loader.releaseRes(this.releaseResList[i]);
+        }
+        this.releaseResList = [];
+    }
 });

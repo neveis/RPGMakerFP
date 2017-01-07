@@ -8,6 +8,7 @@ const EventType = cc.Enum({
     Dialogue: 1,
     Shop: 2,
     SwitchScene: 3,
+    ExecuteEvent: 4,
     ScrollMap: 5,
     MoveActor: 6,
     ShowActor: 7,
@@ -23,12 +24,20 @@ const EventType = cc.Enum({
     DoorAnimation: 17,
     MoveByAStar: 18,
     GetTreasure: 19,
+    LockUI: 20,
     Option: 21,
     Delay: 22,
     FadeIn: 23,
     Task: 24,
     AudioMusic: 25,
-    AudioEffect: 26
+    AudioEffect: 26,
+    ChangeAtlas: 27,
+    ChangeSprite: 28,
+    MoveAnimation: 29
+});
+
+const ConditionType = cc.Enum({
+    CheckItem: 1
 });
 
 cc.Class({
@@ -95,6 +104,16 @@ cc.Class({
         let direction = detail.direction;
         this.game.switchScene(destMapId, playerId, destPos, direction, false);
     },
+
+    /**
+     * Type 4
+     */
+    executeEvent: function(detail, gameEvent) {
+        let eventId = detail.eventId;
+        this.eventManager.eventStart(eventId);
+        gameEvent.next();
+    },
+
     /**
      * Type 5
      */
@@ -146,13 +165,15 @@ cc.Class({
         let pos = detail.pos;
         let direction = detail.direction;
         let actorTarget = this.game.scene.getActorTarget(actorId);
+        actorTarget.setPos(pos, direction);
+        gameEvent.next();
     },
 
     /**
      * Type 10
      */
     showEmotion: function(detail, gameEvent) {
-        let actorId = detail.actorid.toString();
+        let actorId = detail.actorId.toString();
         let emotionName = detail.emotionName;
         let wait = detail.wait;
         let target = this.game.scene.getActorTarget(actorId);
@@ -257,6 +278,14 @@ cc.Class({
     },
 
     /**
+     * Type 20
+     */
+    lockUI: function(detail, gameEvent) {
+        let lock = detail.lock;
+        this.game.lockUI(lock, gameEvent);
+    },
+
+    /**
      * Type 21
      */
     showOption: function(detail, target, gameEvent) {
@@ -318,6 +347,43 @@ cc.Class({
         this.audioManager.playEffect(audioName, gameEvent);
     },
 
+    /**
+     * Type 27
+     */
+    changeAtlas: function(detail, gameEvent) {
+        let actorId = detail.actorId.toString();
+        let atlasPath = detail.atlasPath;
+        let target = this.game.scene.getActorTarget(actorId);
+        target.changeAtlas(atlasPath, gameEvent);
+    },
+
+    /**
+     * Type 28
+     */
+    changeSprite: function(detail, gameEvent) {
+        let actorId = detail.actorId.toString();
+        let spriteName = detail.spriteName;
+        let target = this.game.scene.getActorTarget(actorId);
+        target.changeSprite(spriteName, gameEvent);
+    },
+
+    /**
+     * Type 29
+     */
+    moveAnimation: function(detail, gameEvent) {
+        let actorId = detail.actorId.toString();
+        let direction = detail.direction;
+        let speed = detail.speed;
+        let state = detail.state;
+        let target = this.game.scene.getActorTarget(actorId);
+        if (state == 1) {
+            target.startAnim(null, { direction: direction, speed: speed });
+        } else {
+            target.stopAnim(null, direction);
+        }
+        gameEvent.next();
+    },
+
     eventInterpreter: function(subEvent, gameEvent) {
         let detail = subEvent.detail;
         switch (subEvent.eventType) {
@@ -329,6 +395,9 @@ cc.Class({
                 break;
             case EventType.SwitchScene:
                 this.switchScene(detail);
+                break;
+            case EventType.ExecuteEvent:
+                this.executeEvent(detail, gameEvent);
                 break;
             case EventType.ScrollMap:
                 this.scrollMap(detail, gameEvent);
@@ -375,6 +444,9 @@ cc.Class({
             case EventType.GetTreasure:
                 this.getTreasure(detail, gameEvent.event.target)
                 break;
+            case EventType.LockUI:
+                this.lockUI(detail, gameEvent);
+                break;
             case EventType.Option:
                 this.showOption(detail, gameEvent.event.target, gameEvent);
                 break;
@@ -390,11 +462,75 @@ cc.Class({
             case EventType.AudioEffect:
                 this.audioEffect(detail, gameEvent);
                 break;
+            case EventType.ChangeAtlas:
+                this.changeAtlas(detail, gameEvent);
+                break;
+            case EventType.ChangeSprite:
+                this.changeSprite(detail, gameEvent);
+                break;
+            case EventType.MoveAnimation:
+                this.moveAnimation(detail, gameEvent);
+                break;
             default:
                 console.log("no event type")
                 gameEvent.next();
                 break;
         }
-    }
+    },
 
+    /**
+     * 检测条件
+     */
+
+    checkItem: function(detail) {
+        let type = detail.type;
+        let itemId = detail.itemId;
+        let num = detail.num;
+        let compare = detail.compare;
+
+        let realNum;
+        if (type == 0) {
+            realNum = this.playerData.getMoney()
+        } else {
+            realNum = this.playerData.checkItem(itemId)
+        }
+
+        switch (compare) {
+            case 0:
+                //=
+                if (realNum == num) return true
+                break;
+            case 1:
+                //>
+                if (realNum > num) return true
+                break;
+            case 2:
+                //<
+                if (realNum < num) return true
+                break;
+            case 3:
+                //>=
+                if (realNum >= num) return true
+                break;
+            case 4:
+                //<=
+                if (realNum <= num) return true
+                break;
+        }
+        return false;
+
+    },
+
+    conditionInterpreter: function(condition) {
+        let detail = condition.detail;
+        let result;
+        switch (condition.conditionType) {
+            case ConditionType.CheckItem:
+                result = this.checkItem(detail);
+                break;
+            default:
+                result = false;
+        }
+        return result;
+    }
 });

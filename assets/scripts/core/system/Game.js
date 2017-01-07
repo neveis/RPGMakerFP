@@ -20,9 +20,8 @@ cc.Class({
         //Game节点设置为常驻节点
         cc.game.addPersistRootNode(this.node);
 
-        //正式删除
-        this.loadPos = cc.v2(320, 160);
-        this.loadDirection = 2;
+        //锁定UI标志
+        this.lockUIFlag = false;
 
         //当前正在控制的角色ID，默认为ID = 1
         this.playerId = 1;
@@ -43,6 +42,7 @@ cc.Class({
         this.eventManager = this.node.getComponent('EventManager');
         this.audioManager = this.node.getComponent('AudioManager');
         this.playerData = this.node.getComponent('PlayerData');
+        this.cache = this.node.getComponent('Cache');
         //this.gameMenu = this.gameMenuNode.getComponent("GameMenu");
         //this.hud = cc.find("Game/Hud").getComponent("Hud");
 
@@ -196,7 +196,7 @@ cc.Class({
                 actorTarget.node.active = this.dynamicActorList[i].active;
             }
 
-            this.hideUI(["default"], false, false);
+            this.hideUI(['default'], false, false);
 
             //检测是否有初始事件
             if (this.eventManager.checkEventById(this.currentMapId, 0)) {
@@ -275,6 +275,9 @@ cc.Class({
      * @param {Boolean} nextEvent
      */
     hideUI: function(nodeList, hide, cb) {
+        //如果UI被锁定，那么该函数不生效
+        if (this.lockUIFlag) return;
+
         let NodeMap = RPG.NodeMap;
         let node;
         for (let i = 0; i < nodeList.length; i++) {
@@ -289,6 +292,14 @@ cc.Class({
                 node && (node.active = !hide);
             }
         }
+        if (cb) cb.next();
+    },
+
+    /**
+     * 用于锁定UI，启用时，不能改变UI显示或隐藏状态
+     */
+    lockUI: function(lock, cb) {
+        this.lockUIFlag = lock;
         if (cb) cb.next();
     },
 
@@ -449,6 +460,9 @@ cc.Class({
         this.playerId = playerId;
         this.loadPos = destPos;
         this.loadDirection = direction;
+
+        //释放动态加载的资源
+        this.cache.releaseRes();
         //hideUI;
         cc.director.loadScene(MapList[destMapId]);
     },
