@@ -130,4 +130,8 @@ cc.Class({
         if (eventId in this.eventList)
             delete this.eventList[eventId];
     },
+
+    clearEvent: function() {
+        this.eventList = {};
+    }
 });

@@ -2,7 +2,7 @@ const RPG = require('Global');
 const MoveStep = RPG.MoveStep;
 const Direction = RPG.Direction;
 const MoveTime = RPG.MoveTime;
-
+const MapPara = RPG.MapPara;
 cc.Class({
     extends: cc.Component,
 
@@ -36,23 +36,17 @@ cc.Class({
         //手机获取不了gid
         //依然有问题
         //this.blockTileGid = this._blockLayer.getTileSet().firstGid;
-
-        if (this.mapId === "1")
-            this.blockTileGid = 253;
-        else if (this.mapId === "2")
-            this.blockTileGid = 289;
-        else if (this.mapId === "3")
-            this.blockTileGid = 521;
-        else if (this.mapId == "4")
-            this.blockTileGid = 521;
-        else if (this.mapId == "5")
-            this.blockTileGid = 521;
-        else if (this.mapId == "6")
-            this.blockTileGid = 521;
-        else if (this.mapId == "7")
-            this.blockTileGid = 521;
+        this.blockTileGid = MapPara[this.mapId].BlockTileGid;
 
         this.initMap();
+
+        /*
+        let floor = this._tiledMap.getLayer('floor');
+        console.log(floor)
+        let texture = floor.getTexture();
+        console.log(texture);
+        texture.setAliasTexParameters();
+        */
     },
     /**
      * 计算地图移动的边界量
@@ -318,8 +312,8 @@ cc.Class({
         layer[0] = this._tiledMap.getLayer("object");
         layer[1] = this._tiledMap.getLayer("object2");
         //列数 getTileSet还是有问题
-        //var columnNum = layer.getTileSet().imageSize.width / this.tileSize.width;
-        var columnNum = 18;
+        //var columnNum = layer[0].getTileSet().imageSize.width / this.tileSize.width;
+        var columnNum = MapPara[this.mapId].TileSetColumn;
         var doorGid = [doorFirstGid, doorFirstGid + 1,
             doorFirstGid - columnNum, doorFirstGid - columnNum + 1,
             doorFirstGid - 2 * columnNum, doorFirstGid - 2 * columnNum + 1,
@@ -350,10 +344,10 @@ cc.Class({
             var audioManager = this.gameNode.getComponent('AudioManager');
             if (open) {
                 //this.game.playAudioEffect("DoorOpen1", 0, false);
-                audioManager.playEffect('DoorOpen1');
+                audioManager.playEffect('DoorOpen1.mp3');
             } else {
                 //this.game.playAudioEffect("DoorClose1", 0, false);
-                audioManager.playEffect('DoorClose1');
+                audioManager.playEffect('DoorClose1.mp3');
             }
         };
         var showUI = function(target) {

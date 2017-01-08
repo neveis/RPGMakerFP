@@ -31,7 +31,7 @@ cc.Class({
         }
     },
     onAnimationCompleted: function() {
-        this.node.active = false;
+        this.node.opacity = 0;
     }
 
 });

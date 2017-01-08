@@ -98,7 +98,7 @@ cc.Class({
         this.map.setTileBlock(this.getTilePos());
 
         if (!this.event) return;
-        let eventId = this.eventManager.generateEventId(this.map.mapId, this.getTilePos());
+        let eventId = this.eventManager.generateEventId(this.map.mapId, this.getRealTilePos());
         this.eventManager.createEvent(eventId, this.event);
 
         //事件在相邻的位置
@@ -106,16 +106,16 @@ cc.Class({
             let triggerPos;
             switch (this.counter[i]) {
                 case 2:
-                    triggerPos = cc.p(this.getTilePosX(), this.getTilePosY() + GridPerStep);
+                    triggerPos = cc.p(this.getTilePosX(), this.getRealTilePosY() - GridPerStep);
                     break;
                 case 4:
-                    triggerPos = cc.p(this.getTilePosX() - GridPerStep, this.getTilePosY());
+                    triggerPos = cc.p(this.getTilePosX() - GridPerStep, this.getRealTilePosY());
                     break;
                 case 6:
-                    triggerPos = cc.p(this.getTilePosX() + GridPerStep, this.getTilePosY());
+                    triggerPos = cc.p(this.getTilePosX() + GridPerStep, this.getRealTilePosY());
                     break;
                 case 8:
-                    triggerPos = cc.p(this.getTilePosX(), this.getTilePosY() - GridPerStep);
+                    triggerPos = cc.p(this.getTilePosX(), this.getRealTilePosY() + GridPerStep);
                     break;
             }
             let eventId = this.eventManager.generateEventId(this.map.mapId, triggerPos);
@@ -130,7 +130,7 @@ cc.Class({
         this.map.removeTileBlock(this.getTilePos());
 
         if (!this.event) return;
-        let eventId = this.eventManager.generateEventId(this.map.mapId, this.getTilePos());
+        let eventId = this.eventManager.generateEventId(this.map.mapId, this.getRealTilePos());
         this.eventManager.removeEvent(eventId);
 
         //事件在相邻的位置
@@ -138,16 +138,16 @@ cc.Class({
             let triggerPos;
             switch (this.counter[i]) {
                 case 2:
-                    triggerPos = cc.p(this.getTilePosX(), this.getTilePosY() + GridPerStep);
+                    triggerPos = cc.p(this.getTilePosX(), this.getRealTilePosY() - GridPerStep);
                     break;
                 case 4:
-                    triggerPos = cc.p(this.getTilePosX() - GridPerStep, this.getTilePosY());
+                    triggerPos = cc.p(this.getTilePosX() - GridPerStep, this.getRealTilePosY());
                     break;
                 case 6:
-                    triggerPos = cc.p(this.getTilePosX() + GridPerStep, this.getTilePosY());
+                    triggerPos = cc.p(this.getTilePosX() + GridPerStep, this.getRealTilePosY());
                     break;
                 case 8:
-                    triggerPos = cc.p(this.getTilePosX(), this.getTilePosY() - GridPerStep);
+                    triggerPos = cc.p(this.getTilePosX(), this.getRealTilePosY() + GridPerStep);
                     break;
             }
             let eventId = this.eventManager.generateEventId(this.map.mapId, triggerPos);
@@ -195,6 +195,9 @@ cc.Class({
     getPosY: function() {
         return Math.round(this.node.y - ActorOffset);
     },
+    /**
+     * 以左上角为原点的坐标，TileMap限制（更改不了？）
+     */
     getTilePos: function() {
         var x = Math.round(this.getPosX() / this.map.tileSize.width);
         var y = Math.round(this.getPosY() / this.map.tileSize.height);
@@ -210,6 +213,19 @@ cc.Class({
         y = this.map.mapTileSize.height - y - 1; //坐标系不同,需要转换
         return y;
     },
+
+    /**
+     * 以左下角为原点的Tile坐标（遗留问题）
+     */
+    getRealTilePosY: function() {
+        var y = Math.round(this.getPosY() / this.map.tileSize.height);
+        return y;
+    },
+
+    getRealTilePos: function() {
+        return cc.p(this.getTilePosX(), this.getRealTilePosY());
+    },
+
     getForwardPos: function(direction) {
         let destPos = this.getPos();
         switch (direction) {
@@ -279,7 +295,7 @@ cc.Class({
         let animation = emotionNode.addComponent(cc.Animation);
         emotionNode.setAnchorPoint(0, 0);
         emotionNode.setPosition(0, this.node.height)
-        emotionNode.active = false;
+        emotionNode.opacity = 0;
         let emotionFX = emotionNode.addComponent('EmotionFX');
         emotionFX.createAnimationClip();
         this.node.addChild(emotionNode);
@@ -448,7 +464,9 @@ cc.Class({
      * 确认键触发
      */
     checkEventThere: function() {
-        let PosInTile = this.PosPixelToTile(this.getForwardPos(this.direction));
+        //let PosInTile = this.PosPixelToTile(this.getForwardPos(this.direction));
+        let forwardPos = this.getForwardPos(this.direction);
+        let PosInTile = cc.p(forwardPos.x / (MoveStep / GridPerStep), forwardPos.y / (MoveStep / GridPerStep));
         console.log('there ' + PosInTile);
         let eventId = this.eventManager.getEventId(this.map.mapId, PosInTile);
         if (this.eventManager.checkEventById(eventId, 1)) {
@@ -461,7 +479,8 @@ cc.Class({
      * 检查当前位置是否有事件，在移动后调用
      */
     checkEventHere: function() {
-        let PosInTile = this.getTilePos();
+        //let PosInTile = this.getTilePos();
+        let PosInTile = cc.p(this.getTilePosX(), this.getPosY() / (MoveStep / GridPerStep));
         let eventId = this.eventManager.getEventId(this.map.mapId, PosInTile);
         if (this.eventManager.checkEventById(eventId, 2)) {
             this.eventManager.eventStart(eventId);
@@ -471,10 +490,12 @@ cc.Class({
      * 移动接触前检查
      */
     checkEventThereTouch: function() {
-        let PosInTile = this.PosPixelToTile(this.getForwardPos(this.direction))
+        //let PosInTile = this.PosPixelToTile(this.getForwardPos(this.direction))
+        let forwardPos = this.getForwardPos(this.direction);
+        let PosInTile = cc.p(forwardPos.x / (MoveStep / GridPerStep), forwardPos.y / (MoveStep / GridPerStep));
         let eventId = this.eventManager.getEventId(this.map.mapId, PosInTile);
         if (this.eventManager.checkEventById(eventId, 3)) {
-            this.playerStop();
+            this.playerStop(this.direction);
             this.eventManager.eventStart(eventId);
             return true;
         }
@@ -484,6 +505,7 @@ cc.Class({
     move: function(step, direction, speed, wait, cb) {
         this.removeEvent();
         let deltaPos;
+        let realDirection;
         switch (direction) {
             case Direction.Down:
                 deltaPos = cc.v2(0, -step * MoveStep);
@@ -501,27 +523,43 @@ cc.Class({
                 deltaPos = cc.v2(-step * MoveStep, -step * MoveStep);
                 //动画使用左动画
                 direction = Direction.Left;
+                realDirection = Direction.LeftDown;
                 break;
             case Direction.RightDown:
                 deltaPos = cc.v2(step * MoveStep, -step * MoveStep);
                 direction = Direction.Right;
+                realDirection = Direction.RightDown;
                 break;
             case Direction.LeftUp:
                 deltaPos = cc.v2(-step * MoveStep, step * MoveStep);
                 direction = Direction.Left;
+                realDirection = Direction.LeftUp;
                 break;
             case Direction.RightUp:
                 deltaPos = cc.v2(step * MoveStep, step * MoveStep);
                 direction = Direction.Right;
+                realDirection = Direction.RightUp;
                 break;
         }
-        //两种情况，移动结束后再运行下一个事件 或者 移动的同时运行下一个事件。
+
+        //设置Z轴
+        if (direction === Direction.Down || realDirection === Direction.LeftDown || realDirection === Direction.RightDown) {
+            this.node.setLocalZOrder(this.getTilePosY() - deltaPos.y / MoveStep * GridPerStep);
+        }
+
+        let setOrder = function() {
+                if (direction === Direction.Up || realDirection === Direction.LeftUp || realDirection === Direction.RightUp) {
+                    this.node.setLocalZOrder(this.getTilePosY());
+                }
+            }
+            //两种情况，移动结束后再运行下一个事件 或者 移动的同时运行下一个事件。
         if (wait) {
             this.node.runAction(cc.sequence(
                 cc.spawn(
                     cc.callFunc(this.startAnim, this, { direction: direction, speed: speed }),
                     cc.moveBy(MoveTime * step / speed, deltaPos)),
                 cc.spawn(
+                    cc.callFunc(setOrder.bind(this)),
                     cc.callFunc(this.stopAnim, this, direction),
                     cc.callFunc(this.registerEvent, this)
                 ),
@@ -533,6 +571,7 @@ cc.Class({
                     cc.callFunc(this.startAnim, this, { direction: direction, speed: speed }),
                     cc.moveBy(MoveTime * step / speed, deltaPos)),
                 cc.spawn(
+                    cc.callFunc(setOrder.bind(this)),
                     cc.callFunc(this.stopAnim, this, direction),
                     cc.callFunc(this.registerEvent, this))
             ));
@@ -672,11 +711,12 @@ cc.Class({
     showEmotion: function(emotionName, wait, cb) {
         let animation = this.emotionNode.getComponent(cc.Animation);
         let animState = animation.getAnimationState(emotionName);
-        this.emotionNode.active = true;
+        this.emotionNode.opacity = 255;
         if (wait) {
+            animation.play(emotionName);
             this.node.runAction(
                 cc.sequence(
-                    cc.callFunc(function() { animation.play(emotionName) }),
+                    //cc.callFunc(function() { animation.play(emotionName) }),
                     cc.delayTime(animState.duration + 0.2),
                     cc.callFunc(function() { if (cb) cb.next() })
                 )

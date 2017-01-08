@@ -65,13 +65,13 @@ cc.Class({
             let event = jsonData[self.treasureId];
             if (!event) return;
             event.target = self;
-            let eventId = self.eventManager.generateEventId(self.map.mapId, self.getTilePos());
+            let eventId = self.eventManager.generateEventId(self.map.mapId, self.getRealTilePos());
             self.eventManager.createEvent(eventId, event);
         });
     },
 
     removeEvent: function() {
-        this.eventManager.removeEvent(this.eventManager.generateEventId(this.map.mapId, this.getTilePos()));
+        this.eventManager.removeEvent(this.eventManager.generateEventId(this.map.mapId, this.getRealTilePos()));
     },
 
     getPos: function() {
@@ -88,6 +88,18 @@ cc.Class({
         var y = Math.round(this.getPosY() / this.map.tileSize.height);
         y = this.map.mapTileSize.height - y - 1; //坐标系不同,需要转换
         return cc.p(x, y);
+    },
+
+    /**
+     * 以左下角为原点的Tile坐标（遗留问题）
+     */
+    getRealTilePosY: function() {
+        var y = Math.round(this.getPosY() / this.map.tileSize.height);
+        return y;
+    },
+
+    getRealTilePos: function() {
+        return cc.p(this.getTilePos().x, this.getRealTilePosY());
     },
 
     inTreasureList: function(treasureId) {

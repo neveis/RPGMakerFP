@@ -47,12 +47,17 @@ const ActorOffset = 4;
 const MapList = {
     "1": "InnFirstFloor",
     "2": "InnSecondFloor",
-    "3": "ForestOne",
-    "4": "ForestTwo",
-    "5": "ForestThree",
-    "6": "ForestFour",
-    "7": "Camp",
     "99": "Ending"
+};
+//TileSetColumn是 门 所在的图集的列数
+const MapPara = {
+    "1": {
+        BlockTileGid: 253
+    },
+    "2": {
+        BlockTileGid: 289,
+        TileSetColumn: 18
+    }
 };
 const NodeMap = {
     "1": "TouchPanel",
@@ -71,5 +76,6 @@ module.exports = {
     MapList: MapList,
     ActorOffset: ActorOffset,
     NodeMap: NodeMap,
-    AudioPath: AudioPath
+    AudioPath: AudioPath,
+    MapPara: MapPara
 };

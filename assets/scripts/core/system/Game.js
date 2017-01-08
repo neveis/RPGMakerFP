@@ -190,12 +190,16 @@ cc.Class({
 
             this.currentMapId = this.scene.map.mapId;
             //设置动态角色状态 *在scene中设置
-            for (let i = 0; i < this.dynamicActorList; i++) {
+            for (let i = 0; i < this.dynamicActorList.length; i++) {
                 let actorTarget = this.scene.getActorTarget(this.dynamicActorList[i].actorId);
                 actorTarget.setPos(this.dynamicActorList[i].pos);
                 actorTarget.node.active = this.dynamicActorList[i].active;
             }
-
+            //保证阻挡区域不会被误移除
+            for (let i = 0; i < this.dynamicActorList.length; i++) {
+                let actorTarget = this.scene.getActorTarget(this.dynamicActorList[i].actorId);
+                actorTarget.setPos(actorTarget.getPos());
+            }
             this.hideUI(['default'], false, false);
 
             //检测是否有初始事件
@@ -462,15 +466,17 @@ cc.Class({
         this.loadDirection = direction;
 
         //释放动态加载的资源
-        this.cache.releaseRes();
+        //this.cache.releaseRes();
+        this.eventManager.clearEvent();
         //hideUI;
+        this.hideUI(['default'], true, false);
         cc.director.loadScene(MapList[destMapId]);
     },
 
     saveMapInfo: function() {
         let dynamicActorList = [];
         //存储角色状态，位置
-        for (let i = 0; i < this.scene.dynamicActorList; i++) {
+        for (let i = 0; i < this.scene.dynamicActorList.length; i++) {
             dynamicActorList[i] = {
                 actorId: this.scene.dynamicActorList[i].actorId,
                 active: this.scene.dynamicActorList[i].node.active,

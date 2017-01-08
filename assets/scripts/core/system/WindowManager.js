@@ -11,7 +11,8 @@ cc.Class({
         itemMsgPrefab: cc.Prefab,
         messagePrefab: cc.Prefab,
         optionBoxPrefab: cc.Prefab,
-        blackScreenPrefab: cc.Prefab
+        blackScreenPrefab: cc.Prefab,
+        loadingPrefab: cc.Prefab
     },
 
     // use this for initialization
@@ -21,6 +22,9 @@ cc.Class({
         this.itemMsgPool = new cc.NodePool();
         this.messagePool = new cc.NodePool();
         this.optionPool = new cc.NodePool();
+
+        this.loadingPool = new cc.NodePool();
+        this.loadingNode = null;
 
         this.blackScreenPool = new cc.NodePool();
         this.blackScreenPool.put(cc.instantiate(this.blackScreenPrefab));
@@ -135,4 +139,23 @@ cc.Class({
             ));
         }
     },
+
+    showLoading: function(show, cb) {
+        if (show) {
+            if (!this.loadingNode) {
+                if (this.loadingPool.size() > 0) {
+                    this.loadingNode = this.loadingPool.get();
+                } else {
+                    this.loadingNode = cc.instantiate(this.loadingPrefab);
+                }
+                this.gameNode.addChild(this.loadingNode);
+            }
+        } else {
+            if (this.loadingNode) {
+                this.loadingPool.put(this.loadingNode);
+                this.loadingNode = null;
+            }
+        }
+        if (cb) cb.next();
+    }
 });

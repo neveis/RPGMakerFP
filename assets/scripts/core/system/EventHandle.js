@@ -33,7 +33,9 @@ const EventType = cc.Enum({
     AudioEffect: 26,
     ChangeAtlas: 27,
     ChangeSprite: 28,
-    MoveAnimation: 29
+    MoveAnimation: 29,
+    SetZOrder: 30,
+    ShowLoading: 31
 });
 
 const ConditionType = cc.Enum({
@@ -251,7 +253,7 @@ cc.Class({
      * Type 17 untested
      */
     doorAnimation: function(detail, gameEvent) {
-        let doorPos = detail.doorPos;
+        let doorPos = detail.pos;
         let firstGid = detail.firstGid;
         this.game.scene.map.openDoor(doorPos, firstGid, gameEvent);
     },
@@ -330,7 +332,7 @@ cc.Class({
                 break;
                 //恢复
             case 2:
-                this.audioManager.resumeMusic(audioName, gameEvent);
+                this.audioManager.resumeMusic(audioName, loop, gameEvent);
                 break;
                 //停止
             case 3:
@@ -382,6 +384,21 @@ cc.Class({
             target.stopAnim(null, direction);
         }
         gameEvent.next();
+    },
+
+    /**
+     * Type 30
+     */
+    setZOrder: function(detail, gameEvent) {
+
+    },
+
+    /**
+     * Type 31
+     */
+    showLoading: function(detail, gameEvent) {
+        let show = detail.show;
+        this.windowManager.showLoading(show, gameEvent);
     },
 
     eventInterpreter: function(subEvent, gameEvent) {
@@ -470,6 +487,9 @@ cc.Class({
                 break;
             case EventType.MoveAnimation:
                 this.moveAnimation(detail, gameEvent);
+                break;
+            case EventType.ShowLoading:
+                this.showLoading(detail, gameEvent);
                 break;
             default:
                 console.log("no event type")

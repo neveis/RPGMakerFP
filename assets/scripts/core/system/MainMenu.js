@@ -9,6 +9,7 @@ cc.Class({
     onLoad: function() {
         this.gameNode = cc.find("Game");
         this.game = this.gameNode.getComponent("Game");
+        this.windowManager = this.gameNode.getComponent("WindowManager");
     },
 
     showSaveWin: function() {
@@ -21,7 +22,11 @@ cc.Class({
 
     startGame: function() {
         //cc.director.loadScene("Opening");
-        this.game.switchScene("1", 1, cc.p(384, 256), 6, true);
+        //this.windowManager.fadeInOrOut(false, 1, null);
+        this.scheduleOnce(function() {
+            this.game.switchScene("1", 1, cc.p(384, 256), 6, true);
+            //this.game.switchScene("2", 1, cc.p(640, 288), 2, true);
+        }, 2.5);
     },
 
     exitGame: function() {

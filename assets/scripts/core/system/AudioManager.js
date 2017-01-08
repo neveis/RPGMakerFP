@@ -12,9 +12,23 @@ cc.Class({
     onLoad: function() {
         this.audioList = [];
         //默认音量大小
-        this.musicVolume = 0.5;
-        this.effectVolume = 0.5;
+        this.musicVolume = 0.3;
+        this.effectVolume = 0.3;
         this.musicList = {};
+
+        var self = this;
+        cc.game.on(cc.game.EVENT_HIDE, function() {
+            for (var key in self.musicList) {
+                cc.audioEngine.pause(self.musicList[key])
+            }
+
+        });
+
+        cc.game.on(cc.game.EVENT_SHOW, function() {
+            for (var key in self.musicList) {
+                cc.audioEngine.resume(self.musicList[key])
+            }
+        });
     },
 
     /**
@@ -60,8 +74,12 @@ cc.Class({
         cc.audioEngine.pause(this.musicList[audioName]);
         if (cb) cb.next();
     },
-    resumeMusic: function(audioName, cb) {
-        cc.audioEngine.resume(this.musicList[audioName]);
+    resumeMusic: function(audioName, loop, cb) {
+        if (audioName in this.musicList) {
+            cc.audioEngine.resume(this.musicList[audioName]);
+        } else {
+            this.playMusic(audioName, loop, null)
+        }
         if (cb) cb.next();
     },
     stopMusic: function(audioName, cb) {

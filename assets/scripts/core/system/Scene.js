@@ -22,7 +22,8 @@ cc.Class({
         let actors = this.actorNode.children;
         for (let i = 0; i < actors.length; i++) {
             let target = actors[i].getComponent('Actor');
-            this.actorList[target.actorId] = target;
+            if (target)
+                this.actorList[target.actorId] = target;
         }
     },
 
@@ -71,6 +72,7 @@ cc.Class({
         });
 
         //读取预加载音频
+        /*
         let audioFile = 'Scene/' + this.map.mapId + '/Audio';
         cc.loader.loadRes(audioFile, function(err, audioList) {
             if (err) {
@@ -78,8 +80,8 @@ cc.Class({
                 return;
             }
             //self.audioManager.preload(audioList);
-            cc.loader.releaseRes(audioFile);
         });
+        */
     },
 
     getActorTarget: function(actorId) {
