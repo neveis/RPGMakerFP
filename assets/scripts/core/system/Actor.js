@@ -7,6 +7,8 @@ var ActorOffset = RPG.ActorOffset;
 var AtlasIndex = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"];
 var ClipName = ["down", "left", "right", "up"]
 var PlayerMoveClipName = ["downLeft", "downRight", "leftLeft", "leftRight", "rightRight", "rightLeft", "upLeft", "upRight"];
+var LayerOrder = RPG.LayerOrder;
+
 cc.Class({
     extends: cc.Component,
 
@@ -23,6 +25,11 @@ cc.Class({
         },
         isPlayer: false,
         dynamic: false,
+        layerOrder: {
+            default: LayerOrder.Same,
+            type: LayerOrder
+        },
+        penetrable: false,
         counter: [cc.Integer],
         mapNode: {
             default: null,
@@ -44,6 +51,9 @@ cc.Class({
         this.map = this.mapNode.getComponent("Map");
         this.aStar = this.mapNode.getComponent("AStar");
 
+        this.sceneNode = this.sceneNode || cc.find('Canvas');
+        this.scene = this.sceneNode.getComponent("Scene");
+
         this.gameNode = cc.find("Game");
         this.game = this.gameNode.getComponent("Game");
         this.eventManager = this.gameNode.getComponent("EventManager");
@@ -54,7 +64,11 @@ cc.Class({
         if (!this.anim) {
             this.anim = this.node.addComponent(cc.Animation);
         }
-
+        this.isLeft = true;
+        //设置图层顺序
+        if (this.layerOrder != LayerOrder.Same) {
+            this.setLayerOrder(this.layerOrder, null)
+        }
         //矫正位置,保证在格点上
         this.setPos(cc.p(Math.round(this.node.x / MoveStep) * MoveStep, Math.round(this.node.y / MoveStep) * MoveStep));
         this.realTilePos = this.getTilePos();
@@ -95,7 +109,7 @@ cc.Class({
      * 注册事件
      */
     registerEvent: function() {
-        this.map.setTileBlock(this.getTilePos());
+        this.setTileBlock(this.getTilePos());
 
         if (!this.event) return;
         let eventId = this.eventManager.generateEventId(this.map.mapId, this.getRealTilePos());
@@ -127,7 +141,7 @@ cc.Class({
      * 移除事件
      */
     removeEvent: function() {
-        this.map.removeTileBlock(this.getTilePos());
+        this.removeTileBlock(this.getTilePos());
 
         if (!this.event) return;
         let eventId = this.eventManager.generateEventId(this.map.mapId, this.getRealTilePos());
@@ -181,6 +195,7 @@ cc.Class({
                     actorSprite.spriteFrame = this.actorAtlas.getSpriteFrame("08");
                     break;
             }
+            this.direction = direction;
         }
         if (this.node.active)
             this.registerEvent();
@@ -250,12 +265,29 @@ cc.Class({
      * @param {Object} posInPixel
      * @return {Object} Tile坐标
      */
-    PosPixelToTile: function(posInPixel) {
+    posPixelToTile: function(posInPixel) {
         var x = Math.round(posInPixel.x / this.map.tileSize.width);
         var y = Math.round(posInPixel.y / this.map.tileSize.height);
         y = this.map.mapTileSize.height - y - 1; //坐标系不同,需要转换
         return cc.p(x, y);
     },
+    posPixelToRealTile: function(posInPixel) {
+        var x = Math.round(posInPixel.x / this.map.tileSize.width);
+        var y = Math.round(posInPixel.y / this.map.tileSize.height);
+        return cc.p(x, y);
+    },
+
+    setTileBlock: function(posInTile) {
+        if (this.layerOrder == LayerOrder.Same) {
+            this.map.setTileBlock(posInTile);
+        }
+    },
+    removeTileBlock: function(posInTile) {
+        if (this.layerOrder == LayerOrder.Same) {
+            this.map.removeTileBlock(posInTile);
+        }
+    },
+
     createAnimationClip: function() {
         if (!this.actorAtlas) return;
         var frame;
@@ -268,22 +300,22 @@ cc.Class({
             var clip = cc.AnimationClip.createWithSpriteFrames(frame, 8);
             this.anim.addClip(clip, ClipName[i]);
         }
-        if (this.isPlayer) {
-            for (var i = 0; i < 4; i++) {
-                //左
-                frame = [];
-                frame.push(this.actorAtlas.getSpriteFrame(AtlasIndex[i * 3 + 1 - 1]));
-                frame.push(this.actorAtlas.getSpriteFrame(AtlasIndex[i * 3 + 1]));
-                var clip = cc.AnimationClip.createWithSpriteFrames(frame, 8);
-                this.anim.addClip(clip, PlayerMoveClipName[2 * i]);
-                //右
-                frame = [];
-                frame.push(this.actorAtlas.getSpriteFrame(AtlasIndex[i * 3 + 1 + 1]));
-                frame.push(this.actorAtlas.getSpriteFrame(AtlasIndex[i * 3 + 1]));
-                clip = cc.AnimationClip.createWithSpriteFrames(frame, 8);
-                this.anim.addClip(clip, PlayerMoveClipName[2 * i + 1]);
-            }
+        //if (this.isPlayer) {
+        for (var i = 0; i < 4; i++) {
+            //左
+            frame = [];
+            frame.push(this.actorAtlas.getSpriteFrame(AtlasIndex[i * 3 + 1 - 1]));
+            frame.push(this.actorAtlas.getSpriteFrame(AtlasIndex[i * 3 + 1]));
+            var clip = cc.AnimationClip.createWithSpriteFrames(frame, 8);
+            this.anim.addClip(clip, PlayerMoveClipName[2 * i]);
+            //右
+            frame = [];
+            frame.push(this.actorAtlas.getSpriteFrame(AtlasIndex[i * 3 + 1 + 1]));
+            frame.push(this.actorAtlas.getSpriteFrame(AtlasIndex[i * 3 + 1]));
+            clip = cc.AnimationClip.createWithSpriteFrames(frame, 8);
+            this.anim.addClip(clip, PlayerMoveClipName[2 * i + 1]);
         }
+        //}
     },
 
     /**
@@ -367,7 +399,7 @@ cc.Class({
      * 设置朝向以及矫正贴图
      */
     playerStop: function(direction) {
-        //this.anim.stop();
+        this.anim.stop();
         //this.player.stopAllActions();
         var playerAtlas = this.actorAtlas;
         switch (direction) {
@@ -390,7 +422,7 @@ cc.Class({
      * 移动动画
      */
     playerMoveAnimation: function(direction) {
-        let left, right;
+        let clipName, left, right;
         switch (direction) {
             case Direction.Down:
                 left = "downLeft";
@@ -409,11 +441,10 @@ cc.Class({
                 right = "rightRight";
                 break;
         }
-        if (this.isLeft) {
-            this.anim.play(left);
-        } else {
-            this.anim.play(right)
-        }
+        clipName = this.isLeft ? left : right;
+        var animState = this.anim.play(clipName);
+        //恢复默认播放速度
+        animState.speed = 1;
         this.isLeft = !this.isLeft;
     },
 
@@ -436,10 +467,10 @@ cc.Class({
                 pos = cc.p(MoveStep, 0);
                 break;
         }
-        this.map.removeTileBlock(this.getTilePos());
+        this.removeTileBlock(this.getTilePos());
         //let destPos = this.map._getTilePos(cc.pAdd(this.getPos(), pos));
-        let destPos = this.PosPixelToTile(this.getForwardPos(direction));
-        this.map.setTileBlock(destPos);
+        let destPos = this.posPixelToTile(this.getForwardPos(direction));
+        this.setTileBlock(destPos);
         this.realTilePos = destPos;
         this.node.setLocalZOrder(destPos.y);
         //移动结束后，要检查是否有事件需要触发
@@ -464,9 +495,9 @@ cc.Class({
      * 确认键触发
      */
     checkEventThere: function() {
-        //let PosInTile = this.PosPixelToTile(this.getForwardPos(this.direction));
+        //let PosInTile = this.posPixelToTile(this.getForwardPos(this.direction));
         let forwardPos = this.getForwardPos(this.direction);
-        let PosInTile = cc.p(forwardPos.x / (MoveStep / GridPerStep), forwardPos.y / (MoveStep / GridPerStep));
+        let PosInTile = this.posPixelToRealTile(forwardPos);
         console.log('there ' + PosInTile);
         let eventId = this.eventManager.getEventId(this.map.mapId, PosInTile);
         if (this.eventManager.checkEventById(eventId, 1)) {
@@ -480,7 +511,7 @@ cc.Class({
      */
     checkEventHere: function() {
         //let PosInTile = this.getTilePos();
-        let PosInTile = cc.p(this.getTilePosX(), this.getPosY() / (MoveStep / GridPerStep));
+        let PosInTile = this.getRealTilePos();
         let eventId = this.eventManager.getEventId(this.map.mapId, PosInTile);
         if (this.eventManager.checkEventById(eventId, 2)) {
             this.eventManager.eventStart(eventId);
@@ -490,9 +521,9 @@ cc.Class({
      * 移动接触前检查
      */
     checkEventThereTouch: function() {
-        //let PosInTile = this.PosPixelToTile(this.getForwardPos(this.direction))
+        //let PosInTile = this.posPixelToTile(this.getForwardPos(this.direction))
         let forwardPos = this.getForwardPos(this.direction);
-        let PosInTile = cc.p(forwardPos.x / (MoveStep / GridPerStep), forwardPos.y / (MoveStep / GridPerStep));
+        let PosInTile = this.posPixelToRealTile(forwardPos);
         let eventId = this.eventManager.getEventId(this.map.mapId, PosInTile);
         if (this.eventManager.checkEventById(eventId, 3)) {
             this.playerStop(this.direction);
@@ -503,78 +534,101 @@ cc.Class({
     },
 
     move: function(step, direction, speed, wait, cb) {
-        this.removeEvent();
         let deltaPos;
+        let stepPos;
         let realDirection;
         switch (direction) {
             case Direction.Down:
                 deltaPos = cc.v2(0, -step * MoveStep);
+                stepPos = cc.v2(0, -MoveStep);
                 break;
             case Direction.Up:
                 deltaPos = cc.v2(0, step * MoveStep);
+                stepPos = cc.v2(0, MoveStep);
                 break;
             case Direction.Left:
                 deltaPos = cc.v2(-step * MoveStep, 0);
+                stepPos = cc.v2(-MoveStep, 0);
                 break;
             case Direction.Right:
                 deltaPos = cc.v2(step * MoveStep, 0);
+                stepPos = cc.v2(MoveStep, 0);
                 break;
             case Direction.LeftDown:
                 deltaPos = cc.v2(-step * MoveStep, -step * MoveStep);
+                stepPos = cc.v2(-MoveStep, -MoveStep);
                 //动画使用左动画
                 direction = Direction.Left;
                 realDirection = Direction.LeftDown;
                 break;
             case Direction.RightDown:
                 deltaPos = cc.v2(step * MoveStep, -step * MoveStep);
+                stepPos = cc.v2(MoveStep, -MoveStep);
                 direction = Direction.Right;
                 realDirection = Direction.RightDown;
                 break;
             case Direction.LeftUp:
                 deltaPos = cc.v2(-step * MoveStep, step * MoveStep);
+                stepPos = cc.v2(-MoveStep, MoveStep);
                 direction = Direction.Left;
                 realDirection = Direction.LeftUp;
                 break;
             case Direction.RightUp:
                 deltaPos = cc.v2(step * MoveStep, step * MoveStep);
+                stepPos = cc.v2(MoveStep, MoveStep);
                 direction = Direction.Right;
                 realDirection = Direction.RightUp;
                 break;
         }
 
         //设置Z轴
-        if (direction === Direction.Down || realDirection === Direction.LeftDown || realDirection === Direction.RightDown) {
+        if (direction === Direction.Down || realDirection === Direction.LeftDown || realDirection === Direction.RightDown ||
+            direction === Direction.Left || direction === Direction.Right) {
             this.node.setLocalZOrder(this.getTilePosY() - deltaPos.y / MoveStep * GridPerStep);
         }
 
         let setOrder = function() {
-                if (direction === Direction.Up || realDirection === Direction.LeftUp || realDirection === Direction.RightUp) {
-                    this.node.setLocalZOrder(this.getTilePosY());
-                }
+            if (direction === Direction.Up || realDirection === Direction.LeftUp || realDirection === Direction.RightUp) {
+                this.node.setLocalZOrder(this.getTilePosY());
             }
-            //两种情况，移动结束后再运行下一个事件 或者 移动的同时运行下一个事件。
-        if (wait) {
-            this.node.runAction(cc.sequence(
-                cc.spawn(
-                    cc.callFunc(this.startAnim, this, { direction: direction, speed: speed }),
-                    cc.moveBy(MoveTime * step / speed, deltaPos)),
-                cc.spawn(
-                    cc.callFunc(setOrder.bind(this)),
-                    cc.callFunc(this.stopAnim, this, direction),
-                    cc.callFunc(this.registerEvent, this)
-                ),
-                cc.callFunc(function() { if (cb) cb.next() })
+        };
+        /*
+        let setBlock = function() {
+            this.removeEvent();
+            let currentPos = this.getPos();
+            let destPos = cc.pAdd(currentPos, stepPos);
+            this.map.setTileBlock(this.posPixelToTile(destPos));
+        };
+        */
+
+        //提前设置不可通行属性
+        let currentPos = this.getPos();
+        let destPos = cc.pAdd(currentPos, deltaPos);
+        this.setTileBlock(this.posPixelToTile(destPos));
+
+        //两种情况，移动结束后再运行下一个事件 或者 移动的同时运行下一个事件。
+        let sequence = [];
+        for (let i = 0; i < step; i++) {
+            sequence.push(cc.spawn(
+                cc.callFunc(this.startAnim, this, { direction: direction, speed: speed }),
+                cc.moveBy(MoveTime / speed, stepPos)));
+            sequence.push(cc.spawn(
+                cc.callFunc(setOrder.bind(this)),
+                cc.callFunc(this.stopAnim, this, direction)
             ));
+        }
+        //如果不移动，只改变方向。
+        if (step == 0) {
+            sequence.push(cc.callFunc(this.stopAnim, this, direction));
         } else {
-            this.node.runAction(cc.sequence(
-                cc.spawn(
-                    cc.callFunc(this.startAnim, this, { direction: direction, speed: speed }),
-                    cc.moveBy(MoveTime * step / speed, deltaPos)),
-                cc.spawn(
-                    cc.callFunc(setOrder.bind(this)),
-                    cc.callFunc(this.stopAnim, this, direction),
-                    cc.callFunc(this.registerEvent, this))
-            ));
+            this.removeEvent();
+            sequence.push(cc.callFunc(this.registerEvent, this));
+        }
+        if (wait) {
+            sequence.push(cc.callFunc(function() { if (cb) cb.next() }));
+            this.node.runAction(cc.sequence(sequence));
+        } else {
+            this.node.runAction(cc.sequence(sequence));
             if (cb) cb.next()
         }
     },
@@ -614,15 +668,10 @@ cc.Class({
                 newDirection = Direction.Up;
                 pos = cc.p(0, MoveStep);
             }
-            if (newDirection != oldDirection) {
-                //转向，动画要改变
-                sequence.push(cc.spawn(
-                    cc.moveBy(MoveTime / speed, pos),
-                    cc.callFunc(this.startAnim, this, { direction: newDirection, speed: speed })
-                ));
-            } else {
-                sequence.push(cc.moveBy(MoveTime / speed, pos));
-            }
+            sequence.push(cc.spawn(
+                cc.moveBy(MoveTime / speed, pos),
+                cc.callFunc(this.startAnim, this, { direction: newDirection, speed: speed })
+            ));
         }
         sequence.push(cc.spawn(
             cc.callFunc(this.stopAnim, this, direction),
@@ -638,8 +687,8 @@ cc.Class({
         }
     },
 
-    startAnim: function(target, data) {
-        this.anim.stop();
+    moveAnimation: function(target, data) {
+        //this.anim.stop();
         var direction = data.direction;
         var speed = data.speed;
         var clipName
@@ -665,6 +714,35 @@ cc.Class({
         // 设置动画循环次数为无限次
         animState.repeatCount = Infinity;
     },
+    startAnim: function(target, data) {
+        var direction = data.direction;
+        var speed = data.speed;
+        var clipName, left, right;
+        switch (direction) {
+            case Direction.Down:
+                left = "downLeft";
+                right = "downRight";
+                break;
+            case Direction.Up:
+                left = "upLeft";
+                right = "upRight";
+                break;
+            case Direction.Left:
+                left = "leftLeft";
+                right = "leftRight";
+                break;
+            case Direction.Right:
+                left = "rightLeft";
+                right = "rightRight";
+                break;
+        }
+        clipName = this.isLeft ? left : right;
+        var animState = this.anim.play(clipName);
+        //设置播放速度
+        animState.speed = speed;
+        this.isLeft = !this.isLeft;
+    },
+
     stopAnim: function(target, direction) {
         var face
         switch (direction) {
@@ -684,6 +762,51 @@ cc.Class({
         this.anim.stop();
         //纠正贴图
         this.node.getComponent(cc.Sprite).spriteFrame = this.actorAtlas.getSpriteFrame(face);
+    },
+
+    /**
+     * 随机移动一步
+     */
+    moveRandomly: function(speed, cb) {
+        let direction;
+        let passable = false;
+        let posInTile;
+        let moveDirection;
+        let count = 0;
+        //如果随机到不可行走区域，重新随机。防止无可以走路径产生死循环。
+        while (!passable && count < 10) {
+            count++;
+            direction = Math.random() * 4 | 0;
+            switch (direction) {
+                case 0:
+                    //up
+                    moveDirection = Direction.Up;
+                    break;
+                case 1:
+                    //down
+                    moveDirection = Direction.Down;
+                    break;
+                case 2:
+                    //left
+                    moveDirection = Direction.Left;
+                    break;
+                case 3:
+                    //right
+                    moveDirection = Direction.Right;
+                    break;
+                default:
+                    passable = false;
+            }
+            posInTile = this.posPixelToTile(this.getForwardPos(moveDirection));
+            if ((this.penetrable && this.map.inMapRange(posInTile)) || this.map.tryToMoveInTile(posInTile)) {
+                passable = true;
+            }
+        }
+        if (passable) {
+            this.move(1, moveDirection, speed, true, cb);
+        } else {
+            if (cb) cb.next();
+        }
     },
 
     face: function(direction) {
@@ -752,6 +875,33 @@ cc.Class({
         this.node.getComponent(cc.Sprite).spriteFrame = this.actorAtlas.getSpriteFrame(spriteName);
         if (cb) cb.next();
     },
+
+    setLayerOrder: function(order, cb) {
+        if (this.layerOrder == LayerOrder.Same) {
+            this.removeTileBlock(this.getTilePos());
+        }
+        this.layerOrder = order;
+        let targetNode;
+        switch (order) {
+            case LayerOrder.Below:
+                targetNode = this.scene.belowActorNode;
+                break;
+            case LayerOrder.Same:
+                targetNode = this.scene.actorNode;
+                break;
+            case LayerOrder.Above:
+                targetNode = this.scene.aboveActorNode;
+                break;
+        }
+        if (targetNode) {
+            this.node.parent = targetNode;
+        }
+        if (order == LayerOrder.Same) {
+            this.setTileBlock(this.getTilePos());
+        }
+        if (cb) cb.next();
+    },
+
 
     onDisable: function() {
         this.removeEvent()

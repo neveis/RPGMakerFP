@@ -4,6 +4,8 @@ cc.Class({
     properties: {
         mapNode: cc.Node,
         actorNode: cc.Node,
+        belowActorNode: cc.Node,
+        aboveActorNode: cc.Node
     },
 
     // use this for initialization
@@ -11,10 +13,24 @@ cc.Class({
         this.mapNode = this.mapNode || cc.find('Canvas/Map');
         this.map = this.mapNode.getComponent('Map');
         this.actorNode = this.actorNode || cc.find('Canvas/Map/Actor');
+        //this.belowActorNode = this.belowActorNode || cc.find('Canvas/Map/BelowActor');
+        //this.aboveActorNode = this.aboveActorNode || cc.find('Canvas/Map/AboveActor');
         this.gameNode = cc.find('Game');
         this.game = this.gameNode.getComponent('Game');
         this.eventManager = this.gameNode.getComponent('EventManager');
         this.audioManager = this.gameNode.getComponent('AudioManager');
+
+        //创建BelowActor节点和AboveActor节点。
+        let actorNodeIndex = this.actorNode.getSiblingIndex();
+        // this.belowActorNode = new cc.Node('BelowActor');
+        this.aboveActorNode = new cc.Node('AboveActor');
+        // cc.log(actorNodeIndex)
+        // this.mapNode.addChild(this.belowActorNode);
+        this.mapNode.addChild(this.aboveActorNode);
+        // this.belowActorNode.setSiblingIndex(actorNodeIndex);
+        // actorNodeIndex = this.actorNode.getSiblingIndex();
+        // cc.log(actorNodeIndex);
+        this.aboveActorNode.setSiblingIndex(actorNodeIndex + 1);
 
         //遍历角色并记录
         this.actorList = {};

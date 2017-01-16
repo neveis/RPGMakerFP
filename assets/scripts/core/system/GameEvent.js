@@ -11,7 +11,9 @@ var gameEvent = cc.Class({
     properties: {
         loop: false,
         repeatCount: 0,
-        _repeatCount: 0
+        _repeatCount: 0,
+        _running: false,
+        _stop: false
     },
 
     setEventByObj: function(event) {
@@ -41,6 +43,7 @@ var gameEvent = cc.Class({
     },
 
     start: function() {
+        this._running = true;
         this.init();
         this.next();
     },
@@ -71,6 +74,10 @@ var gameEvent = cc.Class({
      * 逐条运行子事件序列。
      */
     next: function() {
+        if (this._stop) {
+            this._stop = false;
+            return;
+        }
         if (!this.subEventSeq.length) {
             //事件运行完，调用回调函数
             if (this.callback) {
@@ -81,7 +88,6 @@ var gameEvent = cc.Class({
                 }
             }
             if (this.loop) {
-                console.log(this._repeatCount);
                 if (this._repeatCount) {
                     this._repeatCount--;
                     setTimeout(function() {
@@ -89,11 +95,15 @@ var gameEvent = cc.Class({
                     }.bind(this), 0);
                 } else {
                     this._repeatCount = this.repeatCount;
+                    this._running = false;
                 }
+            } else {
+                this._running = false;
             }
             return;
         }
         let subEvent = this.subEventSeq.shift();
+        this.preSubEvent = subEvent;
         this.handle.eventInterpreter(subEvent, this);
     },
 
@@ -118,6 +128,7 @@ var gameEvent = cc.Class({
     },
 
     startBySubEvent: function(subEvents) {
+        this._running = true;
         //复制
         this.subEventSeq = subEvents.slice();
         this.next();
@@ -129,23 +140,17 @@ var gameEvent = cc.Class({
     setTarget: function(target) {
         this.event.target = target;
     },
-    /*    
-        page: [{
-            "condition": [{
-                "id": null,
-                "num": null,
-                "type": null
-            }],
-            "switcher": [],
-            "event": [{
-                "id": null,
-                "pos": null,
-                "self": null,
-                "detail": null,
-                "type": null
-            }]
-        }],
-    */
+
+    unshiftSubEvent: function(subEvent) {
+        this.subEventSeq.unshift(subEvent);
+    },
+
+    stop: function() {
+        this._stop = true;
+        if (this.callback && (typeof this.callback !== 'function')) {
+            this.callback.stop();
+        }
+    }
 
 })
 

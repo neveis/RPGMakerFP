@@ -280,6 +280,14 @@ cc.Class({
         } else
             return false;
     },
+
+    inMapRange: function(posInTile) {
+        if (posInTile.x >= 0 && posInTile.x < this.mapTileSize.width && posInTile.y >= 0 && posInTile.y < this.mapTileSize.height) {
+            return true;
+        } else {
+            return false;
+        }
+    },
     /**
      * !#zh
      * 动态设定不能行走区域，主要用于添加NPC时自动设定

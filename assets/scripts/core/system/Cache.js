@@ -47,6 +47,7 @@ cc.Class({
 
     getAvatar: function(actorId) {
         var name = actorId.toString();
+        if (!this.avatarAtlas) return;
         var spriteFrame = this.avatarAtlas.getSpriteFrame(name);
         return (spriteFrame == null ? null : spriteFrame);
 

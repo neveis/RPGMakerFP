@@ -12,7 +12,10 @@ cc.Class({
         messagePrefab: cc.Prefab,
         optionBoxPrefab: cc.Prefab,
         blackScreenPrefab: cc.Prefab,
-        loadingPrefab: cc.Prefab
+        loadingPrefab: cc.Prefab,
+        SystemWinPrefab: cc.Prefab,
+        SaveWindowPrefab: cc.Prefab,
+        BagWindowPrefab: cc.Prefab
     },
 
     // use this for initialization
@@ -22,6 +25,8 @@ cc.Class({
         this.itemMsgPool = new cc.NodePool();
         this.messagePool = new cc.NodePool();
         this.optionPool = new cc.NodePool();
+        this.systemWinPool = new cc.NodePool();
+        this.saveWinPool = new cc.NodePool();
 
         this.loadingPool = new cc.NodePool();
         this.loadingNode = null;
@@ -103,6 +108,35 @@ cc.Class({
         optionComp.dialogueComp = dialogueComp;
         this.gameNode.addChild(optionNode);
         optionComp.showOption(options, cb);
+    },
+
+    showSystemWindow: function() {
+        let systemNode = null;
+        if (this.systemWinPool.size() > 0) {
+            systemNode = this.systemWinPool.get();
+        } else {
+            systemNode = cc.instantiate(this.SystemWinPrefab);
+        }
+        let systemComp = systemNode.getComponent('SystemWindow');
+        systemComp._poolMng = this.systemWinPool;
+        this.gameNode.addChild(systemNode);
+    },
+
+    showSaveWindow: function() {
+        let saveNode = null;
+        if (this.saveWinPool.size() > 0) {
+            saveNode = this.saveWinPool.get();
+        } else {
+            saveNode = cc.instantiate(this.SaveWindowPrefab);
+        }
+        let saveComp = saveNode.getComponent('SaveSystem');
+        saveComp._poolMng = this.saveWinPool;
+        this.gameNode.addChild(saveNode);
+    },
+
+    showBagWindow: function() {
+        let bagNode = cc.instantiate(this.BagWindowPrefab);
+        this.gameNode.addChild(bagNode);
     },
 
     /**

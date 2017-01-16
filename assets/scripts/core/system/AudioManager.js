@@ -67,6 +67,9 @@ cc.Class({
     playMusic: function(audioName, loop, cb) {
         let audioId = cc.audioEngine.play(cc.url.raw(AudioPath + audioName), loop, this.musicVolume);
         this.musicList[audioName] = audioId;
+        if (this.musicVolume == 0) {
+            this.setMusicVolume(0);
+        }
         if (cb) cb.next();
     },
 
@@ -83,7 +86,14 @@ cc.Class({
         if (cb) cb.next();
     },
     stopMusic: function(audioName, cb) {
-        cc.audioEngine.pause(this.musicList[audioName]);
+        cc.audioEngine.stop(this.musicList[audioName]);
+        delete this.musicList[audioName];
+        if (cb) cb.next();
+    },
+
+    stopAll: function(cb) {
+        cc.audioEngine.stopAll();
+        this.musicList = {};
         if (cb) cb.next();
     },
 
@@ -98,6 +108,9 @@ cc.Class({
 
     setMusicVolume: function(volume) {
         this.musicVolume = volume;
+        for (let musicName in this.musicList) {
+            cc.audioEngine.setVolume(this.musicList[musicName], volume);
+        }
     },
 
     getEffectVolume: function() {

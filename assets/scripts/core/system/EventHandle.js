@@ -1,4 +1,5 @@
 const Game = require('Game');
+const GameEvent = require("GameEvent");
 const EventManager = require('EventManager');
 const WindowManager = require('WindowManager');
 const PlayerData = require('PlayerData');
@@ -34,12 +35,19 @@ const EventType = cc.Enum({
     ChangeAtlas: 27,
     ChangeSprite: 28,
     MoveAnimation: 29,
-    SetZOrder: 30,
-    ShowLoading: 31
+    SetLayerOrder: 30,
+    ShowLoading: 31,
+    Branch: 32,
+    MoveRandomly: 33,
+    MaintainEvent: 34
 });
 
 const ConditionType = cc.Enum({
-    CheckItem: 1
+    CheckItem: 1,
+    Random: 2,
+    Variable: 3,
+    CheckDistance: 4,
+    ForwardPassable: 5
 });
 
 cc.Class({
@@ -70,7 +78,8 @@ cc.Class({
 
     // use this for initialization
     onLoad: function() {
-
+        //自定义变量,值必须为函数 key:function
+        this.CustomVariable = {};
     },
 
     /**
@@ -379,7 +388,7 @@ cc.Class({
         let state = detail.state;
         let target = this.game.scene.getActorTarget(actorId);
         if (state == 1) {
-            target.startAnim(null, { direction: direction, speed: speed });
+            target.moveAnimation(null, { direction: direction, speed: speed });
         } else {
             target.stopAnim(null, direction);
         }
@@ -389,8 +398,11 @@ cc.Class({
     /**
      * Type 30
      */
-    setZOrder: function(detail, gameEvent) {
-
+    setLayerOrder: function(detail, gameEvent) {
+        let order = detail.order;
+        let actorId = detail.actorId;
+        let target = this.game.scene.getActorTarget(actorId);
+        target.setLayerOrder(order, gameEvent);
     },
 
     /**
@@ -399,6 +411,63 @@ cc.Class({
     showLoading: function(detail, gameEvent) {
         let show = detail.show;
         this.windowManager.showLoading(show, gameEvent);
+    },
+
+    /**
+     * Type 32
+     */
+    branch: function(detail, gameEvent) {
+        let conditions = detail.conditions;
+        //事件分支列表[[],[]]
+        let branch = detail.branch;
+        //概率参考值。0~1，表示触发概率。1为100%触发。
+        let randomRef = detail.randomRef;
+        let flag = true;
+        let subEvents = branch[0];
+        for (let i = 0; i < conditions.length; i++) {
+            if (!this.conditionInterpreter(conditions[i])) {
+                flag = false;
+                break;
+            }
+        }
+        //如果满足条件，并满足随机概率则触发。
+        if (flag) {
+            let random = cc.random0To1();
+            if (random < randomRef) {
+                subEvents = branch[1];
+            }
+        }
+
+        let newEvent = new GameEvent();
+        newEvent.setCallback(gameEvent);
+        newEvent.startBySubEvent(subEvents);
+    },
+
+    /**
+     * Type 33
+     */
+    moveRandomly: function(detail, gameEvent) {
+        let actorId = detail.actorId;
+        let speed = detail.speed;
+        let target = this.game.scene.getActorTarget(actorId);
+        if (target) {
+            target.moveRandomly(speed, gameEvent);
+        } else {
+            cc.log("cannot find actorID: ", actorId);
+            gameEvent.next();
+        }
+    },
+
+    /**
+     * Type 34 
+     * 只能在Branch中的事件序列使用。在主事件序列中没有用。
+     */
+    maintainEvent: function(detail, gameEvent) {
+        let parentEvent = gameEvent.callback;
+        if (parentEvent instanceof GameEvent) {
+            parentEvent.unshiftSubEvent(parentEvent.preSubEvent);
+        }
+        gameEvent.next();
     },
 
     eventInterpreter: function(subEvent, gameEvent) {
@@ -488,8 +557,20 @@ cc.Class({
             case EventType.MoveAnimation:
                 this.moveAnimation(detail, gameEvent);
                 break;
+            case EventType.SetLayerOrder:
+                this.setLayerOrder(detail, gameEvent);
+                break;
             case EventType.ShowLoading:
                 this.showLoading(detail, gameEvent);
+                break;
+            case EventType.Branch:
+                this.branch(detail, gameEvent);
+                break;
+            case EventType.MoveRandomly:
+                this.moveRandomly(detail, gameEvent);
+                break;
+            case EventType.MaintainEvent:
+                this.maintainEvent(detail, gameEvent);
                 break;
             default:
                 console.log("no event type")
@@ -501,7 +582,9 @@ cc.Class({
     /**
      * 检测条件
      */
-
+    /**
+     * 1
+     */
     checkItem: function(detail) {
         let type = detail.type;
         let itemId = detail.itemId;
@@ -515,42 +598,118 @@ cc.Class({
             realNum = this.playerData.checkItem(itemId)
         }
 
-        switch (compare) {
-            case 0:
-                //=
-                if (realNum == num) return true
-                break;
-            case 1:
-                //>
-                if (realNum > num) return true
-                break;
-            case 2:
-                //<
-                if (realNum < num) return true
-                break;
-            case 3:
-                //>=
-                if (realNum >= num) return true
-                break;
-            case 4:
-                //<=
-                if (realNum <= num) return true
-                break;
-        }
-        return false;
-
+        return this.compare(realNum, num, compare);
     },
 
-    conditionInterpreter: function(condition) {
+    /**
+     * 2
+     */
+    random: function(detail) {
+        let ref = detail.ref;
+        let operator = detail.operator;
+        let result = cc.random0To1();
+
+        return this.compare(result, ref, operator);
+    },
+
+    /**
+     * 3
+     */
+    variable: function(detail) {
+        let variable = detail.variable;
+        let ref = detail.ref;
+        let operator = detail.operator;
+
+        if (this.CustomVariable[variable]) {
+            let result = this.CustomVariable[variable]();
+            return this.compare(result, ref, operator);
+        } else {
+            cc.log('cannot find variable');
+            return false;
+        }
+    },
+
+    /**
+     * 4
+     */
+    checkDistance: function(detail, target) {
+        let actorId1 = detail.actorId1;
+        let actorId2 = detail.actorId2;
+        let ref = detail.ref;
+        let operator = detail.operator;
+
+        //id 0 表示事件拥有者
+        let target1 = (actorId1 == '0') ? target : this.game.scene.getActorTarget(actorId1);
+        let target2 = (actorId2 == '0') ? target : this.game.scene.getActorTarget(actorId2);
+
+        let tilePos1 = target1.getRealTilePos();
+        let tilePos2 = target2.getRealTilePos();
+
+        let deltaX = Math.abs(tilePos1.x - tilePos2.x);
+        let deltaY = Math.abs(tilePos1.y - tilePos2.y);
+
+        //怎么算距离合适？x+y or max(x,y)
+        let distance = detailX + detailY;
+        return this.compare(distance, ref, operator);
+    },
+
+    checkForwardPassable: function(detail) {
+        let direction = detail.direction;
+        let actorId = detail.actorId.toString();
+        let target = this.game.scene.getActorTarget(actorId);
+        return this.game.scene.map.tryToMove(target.getForwardPos(direction));
+    },
+
+    conditionInterpreter: function(condition, gameEvent) {
         let detail = condition.detail;
         let result;
         switch (condition.conditionType) {
             case ConditionType.CheckItem:
                 result = this.checkItem(detail);
                 break;
+            case ConditionType.Random:
+                result = this.random(detail);
+                break;
+            case ConditionType.Variable:
+                result = this.variable(detail);
+                break;
+            case ConditionType.CheckDistance:
+                result = this.checkDistance(detail, gameEvent.target);
+                break;
+            case ConditionType.ForwardPassable:
+                result = this.checkForwardPassable(detail);
+                break;
             default:
                 result = false;
         }
         return result;
+    },
+
+    compare: function(a, b, operator) {
+        switch (operator) {
+            case 0:
+                //=
+                if (a == b) return true
+                break;
+            case 1:
+                //>
+                if (a > b) return true
+                break;
+            case 2:
+                //<
+                if (a < b) return true
+                break;
+            case 3:
+                //>=
+                if (a >= b) return true
+                break;
+            case 4:
+                //<=
+                if (a <= b) return true
+                break;
+            default:
+                return false;
+        }
+        return false;
     }
 });

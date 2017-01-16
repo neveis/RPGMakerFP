@@ -30,6 +30,11 @@ const EventType = cc.Enum({
     AddItem: 12,
     ShowMessage: 13,
 });
+const LayerOrder = cc.Enum({
+    Below: 0,
+    Same: 1,
+    Above: 2,
+});
 var RangeType = cc.Enum({
     POINT: 1,
     SQUARE: 2,
@@ -47,28 +52,53 @@ const ActorOffset = 4;
 const MapList = {
     "1": "InnFirstFloor",
     "2": "InnSecondFloor",
+    "3": "ForestOne",
+    "4": "ForestTwo",
+    "5": "ForestThree",
+    "6": "ForestFour",
+    "7": "CampNight",
+    "8": "CampDay",
     "99": "Ending"
 };
 //TileSetColumn是 门 所在的图集的列数
 const MapPara = {
     "1": {
-        BlockTileGid: 253
+        BlockTileGid: 385
     },
     "2": {
-        BlockTileGid: 289,
-        TileSetColumn: 18
-    }
+        BlockTileGid: 385,
+        TileSetColumn: 16
+    },
+    "3": {
+        BlockTileGid: 521
+    },
+    "4": {
+        BlockTileGid: 521
+    },
+    "5": {
+        BlockTileGid: 521
+    },
+    "6": {
+        BlockTileGid: 521
+    },
+    "7": {
+        BlockTileGid: 521
+    },
+    "8": {
+        BlockTileGid: 521
+    },
 };
 const NodeMap = {
     "1": "TouchPanel",
     "2": "MainButton",
-    "default": ["TouchPanel", "MainButton"]
+    "default": ["TouchPanel", "MainButton", "GroupList", "GameMenu"]
 }
 const AudioPath = 'resources/Audio/'
 module.exports = {
     MoveState: MoveState,
     Direction: Direction,
     EventType: EventType,
+    LayerOrder: LayerOrder,
     RangeType: RangeType,
     GridPerStep: GridPerStep,
     MoveStep: MoveStep,

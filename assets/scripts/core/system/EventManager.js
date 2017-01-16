@@ -75,7 +75,7 @@ cc.Class({
 
     eventStart: function(eventId) {
         let event = this.eventList[eventId];
-        event.start();
+        if (event) event.start();
     },
 
     /**
@@ -132,6 +132,9 @@ cc.Class({
     },
 
     clearEvent: function() {
+        for (var eventId in this.eventList) {
+            this.eventList[eventId].stop();
+        }
         this.eventList = {};
     }
 });

@@ -22,6 +22,7 @@ cc.Class({
 
         //锁定UI标志
         this.lockUIFlag = false;
+        this.loadingFlag = false;
 
         //当前正在控制的角色ID，默认为ID = 1
         this.playerId = 1;
@@ -43,7 +44,10 @@ cc.Class({
         this.audioManager = this.node.getComponent('AudioManager');
         this.playerData = this.node.getComponent('PlayerData');
         this.cache = this.node.getComponent('Cache');
-        //this.gameMenu = this.gameMenuNode.getComponent("GameMenu");
+        this.windowManager = this.getComponent('WindowManager');
+        this.groupList = this.node.getComponentInChildren('GroupList');
+        this.groupList.init();
+        this.gameMenu = this.gameMenuNode.getComponent("GameMenu");
         //this.hud = cc.find("Game/Hud").getComponent("Hud");
 
         //与地图相关的信息
@@ -86,6 +90,7 @@ cc.Class({
                         self.moveState = MoveState.Stand;
                         break;
                 }
+                self.player.playerMove(self.moveState);
                 //cc.log(self.moveState);
             },
             onKeyReleased: function(keyCode, event) {
@@ -123,70 +128,25 @@ cc.Class({
 
         //初始化与地图相关的属性，并运行初始事件
         //所有脚本的start()结束后会被触发
-        this.node.on('InitMap', function(event) {
-            //地图脚本
-            this.map = event.detail.map;
-            this.playerList = this.map.playerList;
-            if (this.playerId != null) {
-                //如果上一个地图的控制角色在当前还可控，则保持上一个地图的角色
-                var i = 0;
-                for (; i < this.playerList.length; i++) {
-                    if (this.prePlayerId == this.playerList[i])
-                        break;
-                }
-                if (i != this.playerList.length) {
-                    this.switchPlayer(null, this.prePlayerId);
-                }
-                this.player = this.actorManager.getTarget(this.playerId);
-                this.playerAnim = this.player.node.getComponent(cc.Animation);
-                //所有地图默认显示为艾尔莎。所以当载入地图后控制角色不为艾尔莎则需要隐藏。
-                if (this.playerId != 1)
-                    this.showActor(1, false, false);
-
-            }
-
-            this.currentMapId = this.map.mapId;
-            this.initMap();
-            for (var i = 0; i < this.dynamicActor.length; i++) {
-                var target = this.actorManager.getTarget(this.dynamicActor[i].id);
-                target.setPos(this.dynamicActor[i].pos);
-                target.node.active = this.dynamicActor[i].active;
-            }
-            //载入完后清空
-            this.dynamicActor = [];
-            this.mapLoaded = event.detail.mapLoaded;
-
-            this.loading.getComponent(cc.Animation).stop()
-            this.loading.parent.active = false;
-            this.hideUI(["TouchPanel", "MainButton", "GameMenu"], false, false);
-            if (this.map.battle) {
-                this.hideUI(["Hud", "BattleButton"], false, false);
-                this.hud.updateDisplay(true);
-            }
-            if (this.gameMenu.menuNode.active)
-                this.gameMenu.menuNode.active = false;
-            //检测是否有地图初始事件，初始事件以地图ID命名，并配合eventDone标志
-            //玩家起始位置待修改，通过场景切换的回调函数完成（逻辑问题没解决，暂不实现）
-            //现在这个方法还可用于读存档中使用
-            if (this.eventManager.eventList[this.currentMapId] != undefined) {
-                if (!this.eventManager.eventDone[this.currentMapId])
-                    this.eventManager.eventStart(this.currentMapId);
-                else {
-                    if (this.playerId != null)
-                        this.setPlayerPos(this.loadPos, this.loadDirection)
-                }
-            } else {
-                if (this.playerId != null)
-                    this.setPlayerPos(this.loadPos, this.loadDirection)
-            }
-        }, this)
-
         this.node.on('scene-init-done', function(event) {
             this.scene = event.detail.scene;
 
             //获取控制角色对象
             this.player = this.scene.getActorTarget(this.playerId);
             this.player.setPlayerPos(this.loadPos, this.loadDirection);
+
+            //优先使用上一个地图正在控制的角色。如果必要，可以通过事件控制切换为其他角色。
+            if (this.prePlayerId != this.playerId) {
+                let i;
+                for (i = 0; i < this.scene.map.playerList.length; i++) {
+                    if (this.prePlayerId == this.scene.map.playerList[i]) {
+                        break;
+                    }
+                }
+                if (i != this.scene.map.playerList.length) {
+                    this.switchPlayer(this.prePlayerId, null);
+                }
+            }
 
             this.currentMapId = this.scene.map.mapId;
             //设置动态角色状态 *在scene中设置
@@ -202,6 +162,13 @@ cc.Class({
             }
             this.hideUI(['default'], false, false);
 
+            this.groupList.initList();
+
+            //读存档才会发生
+            if (this.loadingFlag) {
+                this.windowManager.showLoading(false, null);
+                this.loadingFlag = false;
+            }
             //检测是否有初始事件
             if (this.eventManager.checkEventById(this.currentMapId, 0)) {
                 this.eventManager.eventStart(this.currentMapId);
@@ -219,44 +186,20 @@ cc.Class({
             this.player.playerMove(this.moveState);
         }, this)
     },
-    // called every frame, uncomment this function to activate update callback
-    //update: function(dt) {
 
-    //},
+    switchPlayer: function(actorId, cb) {
+        if (this.player.isMoving()) return;
+        //当前控制角色
+        this.playerId = actorId;
+        let prePlayer = this.player;
+        this.player = this.scene.getActorTarget(actorId);
+        let pos = prePlayer.getPos();
 
-    /**
-     * 切换控制角色,参数为了兼容按键触发
-     */
-    switchPlayer: function(target, actorId) {
-
-        //只有一个可控角色
-        if (this.playerList.length == 1) return;
-
-        var prePlayerId = this.playerId;
-        var pos = this.actorManager.getTarget(prePlayerId).getPos();
-        if (actorId == null) {
-            //不在移动中时才可切换,并没有效果.....
-            if (!this.canMove()) return;
-            var index = 0;
-            for (; index < this.playerList.length; index++) {
-                if (this.playerList[index] == prePlayerId)
-                    break;
-            }
-            index++;
-            if (index == this.playerList.length)
-                index = 0;
-
-            this.playerId = this.playerList[index];
-        } else
-            this.playerId = actorId;;
-        this.showActor(prePlayerId, false, false);
-        this.showActor(this.playerId, true, false);
-        this.setActorPos(this.playerId, pos, this.playerDirection);
-        this.player = this.actorManager.getTarget(this.playerId);
-        this.playerAnim = this.player.node.getComponent(cc.Animation);
-        this.hud.setAvatar(this.playerId);
+        this.player.setPos(pos, prePlayer.direction);
+        prePlayer.node.active = false;
+        this.player.node.active = true;
+        if (cb) cb.next();
     },
-
     /**
      * 添加/删除任务。只用于显示，与系统无任何交互
      * @param {Number} index
@@ -392,7 +335,7 @@ cc.Class({
         };
         var eventData = {
             eventSwitcher: this.eventManager.eventSwitcher,
-            eventDone: this.eventManager.eventDone
+            //eventDone: this.eventManager.eventDone
         };
         var playerData = {
             money: this.playerData.money,
@@ -401,12 +344,12 @@ cc.Class({
             player: player,
             playerPos: this.player.getPos(),
             playerDirection: this.player.direction,
-            taskList: this.playerData.taskList
+            //taskList: this.playerData.taskList
         };
 
         var systemData = {
             musicVolume: this.audioManager.getMusicVolume(),
-            effectVolume: this.audioManager.getEffectsVolume()
+            effectVolume: this.audioManager.getEffectVolume()
         };
 
         var saveData = {
@@ -427,12 +370,12 @@ cc.Class({
         var systemData = saveData.systemData;
 
         this.eventManager.eventSwitcher = eventData.eventSwitcher;
-        this.eventManager.eventDone = eventData.eventDone;
+        //this.eventManager.eventDone = eventData.eventDone;
         this.playerData.money = playerData.money;
         this.playerData.items = playerData.items;
 
         this.audioManager.setMusicVolume(systemData.musicVolume);
-        this.audioManager.setEffectsVolume(systemData.effectVolume);
+        this.audioManager.setEffectVolume(systemData.effectVolume);
 
         this.mapInfo = mapData.mapInfo;
 
@@ -441,7 +384,19 @@ cc.Class({
         this.playerId = currentPlayerId;
         var playerPos = playerData.playerPos;
         var playerDirection = playerData.playerDirection;
-        this.switchScene(mapId, currentPlayerId, playerPos, playerDirection, true);
+
+        //停止播放当前音乐
+        this.audioManager.stopAll();
+        //显示loading过渡
+        this.windowManager.showLoading(true, null);
+        this.loadingFlag = true;
+        if (this.gameMenu._isShown) {
+            this.gameMenu.clickHandleBar();
+        }
+
+        setTimeout(
+            () => { this.switchScene(mapId, currentPlayerId, playerPos, playerDirection, true) },
+            2000);
     },
 
     /**
@@ -470,6 +425,9 @@ cc.Class({
         this.eventManager.clearEvent();
         //hideUI;
         this.hideUI(['default'], true, false);
+        if (this.gameMenu._isShown) {
+            this.gameMenu.clickHandleBar();
+        }
         cc.director.loadScene(MapList[destMapId]);
     },
 
