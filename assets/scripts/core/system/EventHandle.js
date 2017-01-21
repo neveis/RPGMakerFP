@@ -39,7 +39,9 @@ const EventType = cc.Enum({
     ShowLoading: 31,
     Branch: 32,
     MoveRandomly: 33,
-    MaintainEvent: 34
+    MaintainEvent: 34,
+    EventControl: 35,
+    Qmessage: 36
 });
 
 const ConditionType = cc.Enum({
@@ -47,7 +49,10 @@ const ConditionType = cc.Enum({
     Random: 2,
     Variable: 3,
     CheckDistance: 4,
-    ForwardPassable: 5
+    ForwardPassable: 5,
+
+    DetectionRange: 101,
+    CheckBehind: 102
 });
 
 cc.Class({
@@ -175,6 +180,7 @@ cc.Class({
         let actorId = detail.actorId.toString();
         let pos = detail.pos;
         let direction = detail.direction;
+        if (actorId == '0') actorId = this.game.playerId;
         let actorTarget = this.game.scene.getActorTarget(actorId);
         actorTarget.setPos(pos, direction);
         gameEvent.next();
@@ -440,7 +446,7 @@ cc.Class({
 
         let newEvent = new GameEvent();
         newEvent.setCallback(gameEvent);
-        newEvent.startBySubEvent(subEvents);
+        newEvent.startBySubEvent(subEvents, gameEvent);
     },
 
     /**
@@ -468,6 +474,33 @@ cc.Class({
             parentEvent.unshiftSubEvent(parentEvent.preSubEvent);
         }
         gameEvent.next();
+    },
+
+    /**
+     * Type 35
+     * 控制事件的运行停止
+     */
+    eventControl: function(detail, gameEvent) {
+        let state = detail.state;
+        let eventId = detail.eventId;
+        this.eventManager.eventControl(eventId, state, gameEvent.next.bind(gameEvent))
+    },
+
+    /**
+     * Type 36
+     */
+    showQmessage: function(detail, gameEvent) {
+        let actorId = detail.actorId;
+        let message = detail.message;
+
+        let target = (actorId == '0') ? this.game.scene.getActorTarget(this.game.playerId) : this.game.scene.getActorTarget(actorId);
+
+        if (target) {
+            this.windowManager.showQmessage(target.node, message, gameEvent.next.bind(gameEvent));
+        } else {
+            cc.log('can not find node');
+            gameEvent.next();
+        }
     },
 
     eventInterpreter: function(subEvent, gameEvent) {
@@ -572,6 +605,12 @@ cc.Class({
             case EventType.MaintainEvent:
                 this.maintainEvent(detail, gameEvent);
                 break;
+            case EventType.EventControl:
+                this.eventControl(detail, gameEvent);
+                break;
+            case EventType.Qmessage:
+                this.showQmessage(detail, gameEvent);
+                break;
             default:
                 console.log("no event type")
                 gameEvent.next();
@@ -630,6 +669,8 @@ cc.Class({
     },
 
     /**
+     * actor1=0是代表自身
+     * actor2=0代表玩家
      * 4
      */
     checkDistance: function(detail, target) {
@@ -640,7 +681,7 @@ cc.Class({
 
         //id 0 表示事件拥有者
         let target1 = (actorId1 == '0') ? target : this.game.scene.getActorTarget(actorId1);
-        let target2 = (actorId2 == '0') ? target : this.game.scene.getActorTarget(actorId2);
+        let target2 = (actorId2 == '0') ? this.game.scene.getActorTarget(this.game.playerId) : this.game.scene.getActorTarget(actorId2);
 
         let tilePos1 = target1.getRealTilePos();
         let tilePos2 = target2.getRealTilePos();
@@ -653,6 +694,9 @@ cc.Class({
         return this.compare(distance, ref, operator);
     },
 
+    /**
+     * 5
+     */
     checkForwardPassable: function(detail) {
         let direction = detail.direction;
         let actorId = detail.actorId.toString();
@@ -660,9 +704,34 @@ cc.Class({
         return this.game.scene.map.tryToMove(target.getForwardPos(direction));
     },
 
+    /**
+     * 6
+     */
+
+    /**
+     * 用于潜行系统，判断玩家是否在侦察范围内
+     * 101
+     */
+    detectionRange: function(detail) {
+        let selfId = detail.selfId;
+        let range = detail.range;
+        let target = this.game.scene.getActorTarget(selfId);
+
+        return target.stealth.inDetectionRange(selfId, this.game.playerId, range);
+    },
+
+    /**
+     * 用于潜行系统，判断玩家是否在背后
+     */
+    checkBehind: function(detail, self) {
+        let actorId = detail.actorId;
+        let target = (actorId == '0') ? self : this.game.scene.getActorTarget(actorId);
+        return target.stealth.checkBehind();
+    },
+
     conditionInterpreter: function(condition, gameEvent) {
         let detail = condition.detail;
-        let result;
+        let result = false;
         switch (condition.conditionType) {
             case ConditionType.CheckItem:
                 result = this.checkItem(detail);
@@ -674,13 +743,17 @@ cc.Class({
                 result = this.variable(detail);
                 break;
             case ConditionType.CheckDistance:
-                result = this.checkDistance(detail, gameEvent.target);
+                result = this.checkDistance(detail, gameEvent.event.target);
                 break;
             case ConditionType.ForwardPassable:
                 result = this.checkForwardPassable(detail);
                 break;
-            default:
-                result = false;
+            case ConditionType.DetectionRange:
+                result = this.detectionRange(detail);
+                break;
+            case ConditionType.CheckBehind:
+                result = this.checkBehind(detail, gameEvent.event.target);
+                break;
         }
         return result;
     },

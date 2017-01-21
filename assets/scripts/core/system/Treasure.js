@@ -124,6 +124,9 @@ cc.Class({
         let gameEvent = new GameEvent();
         gameEvent.setCallback(cb);
         gameEvent.startBySubEvent(gainEvent);
+        if (cb instanceof GameEvent) {
+            cb.setChild(gameEvent);
+        }
     },
 
     onDisable: function() {

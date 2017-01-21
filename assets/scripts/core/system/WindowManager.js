@@ -15,7 +15,8 @@ cc.Class({
         loadingPrefab: cc.Prefab,
         SystemWinPrefab: cc.Prefab,
         SaveWindowPrefab: cc.Prefab,
-        BagWindowPrefab: cc.Prefab
+        BagWindowPrefab: cc.Prefab,
+        QmessagePrefab: cc.Prefab
     },
 
     // use this for initialization
@@ -137,6 +138,15 @@ cc.Class({
     showBagWindow: function() {
         let bagNode = cc.instantiate(this.BagWindowPrefab);
         this.gameNode.addChild(bagNode);
+    },
+
+    showQmessage: function(parentNode, message, cb) {
+        let node = cc.instantiate(this.QmessagePrefab);
+        let comp = node.getComponent('Qmessage');
+        comp.messageLabel.string = message;
+        node.parent = parentNode;
+
+        if (cb) cb();
     },
 
     /**

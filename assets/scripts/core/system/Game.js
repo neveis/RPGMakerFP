@@ -24,6 +24,7 @@ cc.Class({
         this.lockUIFlag = false;
         this.loadingFlag = false;
 
+        this.loaded = false;
         //当前正在控制的角色ID，默认为ID = 1
         this.playerId = 1;
         this.prePlayerId = 1;
@@ -173,6 +174,7 @@ cc.Class({
             if (this.eventManager.checkEventById(this.currentMapId, 0)) {
                 this.eventManager.eventStart(this.currentMapId);
             }
+            this.loaded = true;
         }, this)
     },
 
@@ -408,6 +410,8 @@ cc.Class({
      * @param {Number} direction
      */
     switchScene: function(destMapId, playerId, destPos, direction, load) {
+        this.loaded = false;
+
         //如果不是读档，则存储当前地图信息
         if (!load) {
             this.saveMapInfo();

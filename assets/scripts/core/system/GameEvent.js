@@ -13,7 +13,8 @@ var gameEvent = cc.Class({
         repeatCount: 0,
         _repeatCount: 0,
         _running: false,
-        _stop: false
+        _stop: false,
+        _child: null
     },
 
     setEventByObj: function(event) {
@@ -43,9 +44,11 @@ var gameEvent = cc.Class({
     },
 
     start: function() {
-        this._running = true;
-        this.init();
-        this.next();
+        if (!this._running) {
+            this._running = true;
+            this.init();
+            this.next();
+        }
     },
 
     /**
@@ -75,6 +78,7 @@ var gameEvent = cc.Class({
      */
     next: function() {
         if (this._stop) {
+            this._running = false;
             this._stop = false;
             return;
         }
@@ -84,6 +88,8 @@ var gameEvent = cc.Class({
                 if (typeof this.callback === 'function') {
                     this.callback();
                 } else {
+                    //分支事件运行结束
+                    this.callback.setChild(null);
                     this.callback.next();
                 }
             }
@@ -91,6 +97,7 @@ var gameEvent = cc.Class({
                 if (this._repeatCount) {
                     this._repeatCount--;
                     setTimeout(function() {
+                        this._running = false;
                         this.start();
                     }.bind(this), 0);
                 } else {
@@ -120,14 +127,17 @@ var gameEvent = cc.Class({
     checkCondition: function(conditions) {
         if (conditions == null) return true;
         for (let i = 0; i < conditions.length; i++) {
-            if (!this.handle.conditionInterpreter(conditions[i])) {
+            if (!this.handle.conditionInterpreter(conditions[i], this)) {
                 return false
             }
         }
         return true;
     },
 
-    startBySubEvent: function(subEvents) {
+    startBySubEvent: function(subEvents, parentEvent) {
+        if (parentEvent) {
+            parentEvent.setChild(this);
+        }
         this._running = true;
         //复制
         this.subEventSeq = subEvents.slice();
@@ -140,15 +150,30 @@ var gameEvent = cc.Class({
     setTarget: function(target) {
         this.event.target = target;
     },
-
+    setChild: function(branchEvent) {
+        if (branchEvent instanceof gameEvent) {
+            this._child = branchEvent;
+        }
+    },
     unshiftSubEvent: function(subEvent) {
         this.subEventSeq.unshift(subEvent);
     },
 
+    resume: function() {
+        this._running = true;
+        if (this._child && this._child instanceof gameEvent) {
+            this._child.resume();
+        } else {
+            this.next();
+        }
+    },
+
     stop: function() {
-        this._stop = true;
-        if (this.callback && (typeof this.callback !== 'function')) {
-            this.callback.stop();
+        this._running = false;
+        if (this._child && (this._child instanceof gameEvent)) {
+            this._child.stop();
+        } else {
+            this._stop = true;
         }
     }
 

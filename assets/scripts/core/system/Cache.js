@@ -10,7 +10,8 @@ cc.Class({
             default: null,
             type: cc.SpriteAtlas
         },
-        avatarAtlas: cc.SpriteAtlas
+        avatarAtlas: cc.SpriteAtlas,
+        sectorAtlas: cc.SpriteAtlas
     },
 
     // use this for initialization
@@ -51,6 +52,12 @@ cc.Class({
         var spriteFrame = this.avatarAtlas.getSpriteFrame(name);
         return (spriteFrame == null ? null : spriteFrame);
 
+    },
+
+    getSectorRangeSprite: function(range) {
+        if (!this.sectorAtlas) return;
+        let spriteFrame = this.sectorAtlas.getSpriteFrame(range);
+        return (spriteFrame == null ? null : spriteFrame);
     },
 
     getItemInfo: function(itemId) {

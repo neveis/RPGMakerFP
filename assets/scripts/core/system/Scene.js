@@ -10,6 +10,7 @@ cc.Class({
 
     // use this for initialization
     onLoad: function() {
+        this.stealth = this.node.getComponent('Stealth');
         this.mapNode = this.mapNode || cc.find('Canvas/Map');
         this.map = this.mapNode.getComponent('Map');
         this.actorNode = this.actorNode || cc.find('Canvas/Map/Actor');

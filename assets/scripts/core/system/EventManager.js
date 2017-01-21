@@ -78,6 +78,43 @@ cc.Class({
         if (event) event.start();
     },
 
+    eventPause: function(eventId) {
+        let event = this.eventList[eventId];
+        if (event) event.stop();
+    },
+
+    eventResume: function(eventId) {
+        let event = this.eventList[eventId];
+        if (event) event.resume();
+    },
+
+    eventStop: function(eventId) {
+        let event = this.eventList[eventId];
+        if (event) event.stop();
+    },
+
+    eventControl: function(eventId, state, cb) {
+        switch (state) {
+            case 0:
+                //start
+                this.eventStart(eventId);
+                break;
+            case 1:
+                //pause
+                this.eventStop(eventId);
+                break;
+            case 2:
+                //resume
+                this.eventResume(eventId);
+                break;
+            case 3:
+                //stop
+                this.eventStop(eventId);
+                break;
+        }
+        if (cb) cb();
+    },
+
     /**
      * !#zh
      * 检测条件是否符合

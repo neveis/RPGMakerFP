@@ -58,7 +58,8 @@ const MapList = {
     "6": "ForestFour",
     "7": "CampNight",
     "8": "CampDay",
-    "99": "Ending"
+    "99": "Ending",
+    "100": "StealthTest"
 };
 //TileSetColumn是 门 所在的图集的列数
 const MapPara = {
@@ -87,6 +88,9 @@ const MapPara = {
     "8": {
         BlockTileGid: 521
     },
+    "100": {
+        BlockTileGid: 521
+    }
 };
 const NodeMap = {
     "1": "TouchPanel",

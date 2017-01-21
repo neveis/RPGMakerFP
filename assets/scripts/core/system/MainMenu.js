@@ -19,13 +19,14 @@ cc.Class({
     startGame: function() {
         //cc.director.loadScene("Opening");
         //淡出，需要自行编写事件淡入，或注释不使用
-        this.windowManager.fadeInOrOut(false, 1, null);
+        //this.windowManager.fadeInOrOut(false, 1, null);
         this.scheduleOnce(function() {
-            this.game.switchScene("1", 1, cc.p(384, 256), 6, true);
+            //this.game.switchScene("1", 1, cc.p(384, 256), 6, true);
             //this.game.switchScene("2", 1, cc.p(640, 288), 2, true);
             //this.game.switchScene("3", 1, cc.p(1536, 288), 4, true);
             //this.game.switchScene("4", 1, cc.p(736, 0), 8, true);
-        }, 2.5);
+            this.game.switchScene("100", 1, cc.p(768, 0), 8, true);
+        }, 0.5);
     },
 
     exitGame: function() {

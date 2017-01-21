@@ -73,6 +73,18 @@ cc.Class({
         this.setPos(cc.p(Math.round(this.node.x / MoveStep) * MoveStep, Math.round(this.node.y / MoveStep) * MoveStep));
         this.realTilePos = this.getTilePos();
 
+        //根据spriteFrame自动设置方向
+        let spriteFrameName = this.getComponent(cc.Sprite).spriteFrame._name;
+        if (spriteFrameName == '01' || spriteFrameName == '02' || spriteFrameName == '03') {
+            this.direction = Direction.Down;
+        } else if (spriteFrameName == '04' || spriteFrameName == '05' || spriteFrameName == '06') {
+            this.direction = Direction.Left;
+        } else if (spriteFrameName == '07' || spriteFrameName == '08' || spriteFrameName == '09') {
+            this.direction = Direction.Right;
+        } else {
+            this.direction = Direction.Up;
+        }
+
         //创建行走动画
         this.createAnimationClip();
 
@@ -581,6 +593,7 @@ cc.Class({
                 break;
         }
 
+        this.direction = direction;
         //设置Z轴
         if (direction === Direction.Down || realDirection === Direction.LeftDown || realDirection === Direction.RightDown ||
             direction === Direction.Left || direction === Direction.Right) {
