@@ -3,7 +3,11 @@ const MoveState = cc.Enum({
     Up: 8,
     Right: 6,
     Down: 2,
-    Left: 4
+    Left: 4,
+    LeftDown: 1,
+    RightDown: 3,
+    LeftUp: 7,
+    RightUp: 9
 });
 const Direction = cc.Enum({
     None: 0,
@@ -58,6 +62,7 @@ const MapList = {
     "6": "ForestFour",
     "7": "CampNight",
     "8": "CampDay",
+    "9": "Warehouse",
     "99": "Ending",
     "100": "StealthTest"
 };

@@ -268,6 +268,22 @@ cc.Class({
             case Direction.Right:
                 destPos.x += MoveStep;
                 break;
+            case Direction.RightUp:
+                destPos.x += MoveStep;
+                destPos.y += MoveStep;
+                break;
+            case Direction.LeftUp:
+                destPos.x -= MoveStep;
+                destPos.y += MoveStep;
+                break;
+            case Direction.LeftDown:
+                destPos.x -= MoveStep;
+                destPos.y -= MoveStep;
+                break;
+            case Direction.RightDown:
+                destPos.x += MoveStep;
+                destPos.y -= MoveStep;
+                break;
         }
         return destPos;
     },
@@ -386,21 +402,27 @@ cc.Class({
         this.playerStop(direction);
     },
 
-    playerMove: function(direction) {
+    playerMove: function(direction, speed) {
+        speed = speed || 1;
         if (this.isMoving()) return;
         let destPos = this.getForwardPos(direction);
         if (direction == Direction.None) {
             return;
         }
         this.direction = direction;
+        if (this.direction === Direction.RightDown || this.direction === Direction.LeftDown) {
+            this.direction = Direction.Down;
+        } else if (this.direction === Direction.RightUp || this.direction === Direction.LeftUp) {
+            this.direction = Direction.Up;
+        }
         if (this.checkEventThereTouch(direction)) {
             return;
         } else {
             if (this.map.tryToMove(destPos)) {
                 //console.log('move');
-                this.playerMoveAnimation(direction);
-                this.playerMoveAction(direction);
-                this.map.moveMap(direction, destPos);
+                this.playerMoveAnimation(direction, speed);
+                this.playerMoveAction(direction, speed);
+                this.map.moveMap(direction, destPos, speed);
             } else {
                 this.playerStop(direction)
             }
@@ -416,9 +438,13 @@ cc.Class({
         var playerAtlas = this.actorAtlas;
         switch (direction) {
             case Direction.Down:
+            case Direction.RightDown:
+            case Direction.LeftDown:
                 this.node.getComponent(cc.Sprite).spriteFrame = playerAtlas.getSpriteFrame('02');
                 break;
             case Direction.Up:
+            case Direction.RightUp:
+            case Direction.LeftUp:
                 this.node.getComponent(cc.Sprite).spriteFrame = playerAtlas.getSpriteFrame('11');
                 break;
             case Direction.Left:
@@ -433,14 +459,19 @@ cc.Class({
     /**
      * 移动动画
      */
-    playerMoveAnimation: function(direction) {
+    playerMoveAnimation: function(direction, speed) {
+        speed = speed || 1;
         let clipName, left, right;
         switch (direction) {
             case Direction.Down:
+            case Direction.RightDown:
+            case Direction.LeftDown:
                 left = "downLeft";
                 right = "downRight";
                 break;
             case Direction.Up:
+            case Direction.RightUp:
+            case Direction.LeftUp:
                 left = "upLeft";
                 right = "upRight";
                 break;
@@ -456,14 +487,15 @@ cc.Class({
         clipName = this.isLeft ? left : right;
         var animState = this.anim.play(clipName);
         //恢复默认播放速度
-        animState.speed = 1;
+        animState.speed = speed;
         this.isLeft = !this.isLeft;
     },
 
     /**
      * 移动动画
      */
-    playerMoveAction: function(direction) {
+    playerMoveAction: function(direction, speed) {
+        speed = speed || 1;
         let pos;
         switch (direction) {
             case Direction.Down:
@@ -478,6 +510,18 @@ cc.Class({
             case Direction.Right:
                 pos = cc.p(MoveStep, 0);
                 break;
+            case Direction.RightUp:
+                pos = cc.p(MoveStep, MoveStep);
+                break;
+            case Direction.LeftUp:
+                pos = cc.p(-MoveStep, MoveStep);
+                break;
+            case Direction.LeftDown:
+                pos = cc.p(-MoveStep, -MoveStep);
+                break;
+            case Direction.RightDown:
+                pos = cc.p(MoveStep, -MoveStep);
+                break;
         }
         this.removeTileBlock(this.getTilePos());
         //let destPos = this.map._getTilePos(cc.pAdd(this.getPos(), pos));
@@ -486,7 +530,7 @@ cc.Class({
         this.realTilePos = destPos;
         this.node.setLocalZOrder(destPos.y);
         //移动结束后，要检查是否有事件需要触发
-        this.node.runAction(cc.sequence(cc.moveBy(MoveTime, pos),
+        this.node.runAction(cc.sequence(cc.moveBy(MoveTime / speed, pos),
             cc.callFunc(this.checkEventHere, this)))
 
     },
@@ -532,13 +576,13 @@ cc.Class({
     /**
      * 移动接触前检查
      */
-    checkEventThereTouch: function() {
+    checkEventThereTouch: function(direction) {
         //let PosInTile = this.posPixelToTile(this.getForwardPos(this.direction))
-        let forwardPos = this.getForwardPos(this.direction);
+        let forwardPos = this.getForwardPos(direction);
         let PosInTile = this.posPixelToRealTile(forwardPos);
         let eventId = this.eventManager.getEventId(this.map.mapId, PosInTile);
         if (this.eventManager.checkEventById(eventId, 3)) {
-            this.playerStop(this.direction);
+            this.playerStop(direction);
             this.eventManager.eventStart(eventId);
             return true;
         }

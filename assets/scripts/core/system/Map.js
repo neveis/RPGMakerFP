@@ -115,7 +115,8 @@ cc.Class({
         }
     },
 
-    moveMap: function(direction, destPos) {
+    moveMap: function(direction, destPos, speed) {
+        speed = speed || 1;
         //direction指的是玩家移动的方向，地图移动方向与其相反
         switch (direction) {
             case Direction.Down:
@@ -126,9 +127,9 @@ cc.Class({
                         var delta = Math.round(this.boundary.verticalMax - this.node.y);
                         //未完成的动作不会停止？导致之前地图移动未完成又叠加新的偏移，导致会出现黑边，所以先停止之前的动作
                         this.node.stopAllActions();
-                        this.node.runAction(cc.moveBy(0.25 * delta / MoveStep, 0, delta));
+                        this.node.runAction(cc.moveBy(MoveTime / speed * delta / MoveStep, 0, delta));
                     } else
-                        this.node.runAction(cc.moveBy(0.25, 0, MoveStep));
+                        this.node.runAction(cc.moveBy(MoveTime / speed, 0, MoveStep));
                 }
                 break;
             case Direction.Up:
@@ -139,9 +140,9 @@ cc.Class({
                         var delta = Math.round(this.node.y - this.boundary.verticalMin);
                         //未完成的动作不会停止？导致之前地图移动未完成又叠加新的偏移，导致会出现黑边，所以先停止之前的动作
                         this.node.stopAllActions();
-                        this.node.runAction(cc.moveBy(0.25 * delta / MoveStep, 0, -delta));
+                        this.node.runAction(cc.moveBy(MoveTime / speed * delta / MoveStep, 0, -delta));
                     } else
-                        this.node.runAction(cc.moveBy(0.25, 0, -MoveStep));
+                        this.node.runAction(cc.moveBy(MoveTime / speed, 0, -MoveStep));
                 }
                 break;
             case Direction.Left:
@@ -151,9 +152,9 @@ cc.Class({
                     if (Math.round(this.node.x + MoveStep) > this.boundary.horizontalMax) {
                         var delta = Math.round(this.boundary.horizontalMax - this.node.x);
                         this.node.stopAllActions();
-                        this.node.runAction(cc.moveBy(0.25 * delta / MoveStep, delta, 0));
+                        this.node.runAction(cc.moveBy(MoveTime / speed * delta / MoveStep, delta, 0));
                     } else
-                        this.node.runAction(cc.moveBy(0.25, MoveStep, 0));
+                        this.node.runAction(cc.moveBy(MoveTime / speed, MoveStep, 0));
                 }
                 break;
             case Direction.Right:
@@ -163,9 +164,125 @@ cc.Class({
                     if (Math.round(this.node.x - MoveStep) < this.boundary.horizontalMin) {
                         var delta = Math.round(this.node.x - this.boundary.horizontalMin);
                         this.node.stopAllActions();
-                        this.node.runAction(cc.moveBy(0.25 * delta / MoveStep, -delta, 0));
+                        this.node.runAction(cc.moveBy(MoveTime / speed * delta / MoveStep, -delta, 0));
                     } else
-                        this.node.runAction(cc.moveBy(0.25, -MoveStep, 0));
+                        this.node.runAction(cc.moveBy(MoveTime / speed, -MoveStep, 0));
+                }
+                break;
+            case Direction.RightUp:
+                if ((destPos.y > this.bottomLimit) &&
+                    (destPos.y <= this.topLimit + MoveStep) && 　
+                    (this.bottomLimit != this.topLimit)) {
+                    if (Math.round(this.node.y - MoveStep) < this.boundary.verticalMin) {
+                        var deltaY = Math.round(this.node.y - this.boundary.verticalMin);
+                    } else {
+                        var deltaY = MoveStep;
+                    }
+                } else {
+                    var deltaY = 0;
+                }
+                if ((destPos.x > this.leftLimit) &&
+                    (destPos.x <= this.rightLimit + MoveStep) &&
+                    (this.leftLimit != this.rightLimit)) {
+                    if (Math.round(this.node.x - MoveStep) < this.boundary.horizontalMin) {
+                        var deltaX = Math.round(this.node.x - this.boundary.horizontalMin);
+                    } else {
+                        var deltaX = MoveStep;
+                    }
+                } else {
+                    var deltaX = 0;
+                }
+                if (deltaX || deltaY) {
+                    this.node.stopAllActions();
+                    this.node.runAction(cc.moveBy(MoveTime / speed * deltaX / MoveStep, -deltaX, 0));
+                    this.node.runAction(cc.moveBy(MoveTime / speed * deltaY / MoveStep, 0, -deltaY));
+                }
+                break;
+            case Direction.LeftUp:
+                if ((destPos.y > this.bottomLimit) &&
+                    (destPos.y <= this.topLimit + MoveStep) && 　
+                    (this.bottomLimit != this.topLimit)) {
+                    if (Math.round(this.node.y - MoveStep) < this.boundary.verticalMin) {
+                        var deltaY = Math.round(this.node.y - this.boundary.verticalMin);
+                    } else {
+                        var deltaY = MoveStep;
+                    }
+                } else {
+                    var deltaY = 0;
+                }
+                if ((destPos.x >= this.leftLimit - MoveStep) &&
+                    (destPos.x < this.rightLimit) &&
+                    (this.leftLimit != this.rightLimit)) {
+                    if (Math.round(this.node.x + MoveStep) > this.boundary.horizontalMax) {
+                        var deltaX = Math.round(this.boundary.horizontalMax - this.node.x);
+                    } else {
+                        var deltaX = MoveStep;
+                    }
+                } else {
+                    var deltaX = 0;
+                }
+                if (deltaX || deltaY) {
+                    this.node.stopAllActions();
+                    this.node.runAction(cc.moveBy(MoveTime / speed * deltaX / MoveStep, deltaX, 0));
+                    this.node.runAction(cc.moveBy(MoveTime / speed * deltaY / MoveStep, 0, -deltaY));
+                }
+                break;
+            case Direction.RightDown:
+                if ((destPos.x > this.leftLimit) &&
+                    (destPos.x <= this.rightLimit + MoveStep) &&
+                    (this.leftLimit != this.rightLimit)) {
+                    if (Math.round(this.node.x - MoveStep) < this.boundary.horizontalMin) {
+                        var deltaX = Math.round(this.node.x - this.boundary.horizontalMin);
+                    } else {
+                        var deltaX = MoveStep;
+                    }
+                } else {
+                    var deltaX = 0;
+                }
+                if ((destPos.y >= this.bottomLimit - MoveStep) &&
+                    (destPos.y < this.topLimit) && 　
+                    (this.bottomLimit != this.topLimit)) {
+                    if (Math.round(this.node.y + MoveStep) > this.boundary.verticalMax) {
+                        var deltaY = Math.round(this.boundary.verticalMax - this.node.y);
+                    } else {
+                        var deltaY = MoveStep;
+                    }
+                } else {
+                    var deltaY = 0;
+                }
+                if (deltaX || deltaY) {
+                    this.node.stopAllActions();
+                    this.node.runAction(cc.moveBy(MoveTime / speed * deltaX / MoveStep, -deltaX, 0));
+                    this.node.runAction(cc.moveBy(MoveTime / speed * deltaY / MoveStep, 0, deltaY));
+                }
+                break;
+            case Direction.LeftDown:
+                if ((destPos.x >= this.leftLimit - MoveStep) &&
+                    (destPos.x < this.rightLimit) &&
+                    (this.leftLimit != this.rightLimit)) {
+                    if (Math.round(this.node.x + MoveStep) > this.boundary.horizontalMax) {
+                        var deltaX = Math.round(this.boundary.horizontalMax - this.node.x);
+                    } else {
+                        var deltaX = MoveStep;
+                    }
+                } else {
+                    var deltaX = 0;
+                }
+                if ((destPos.y >= this.bottomLimit - MoveStep) &&
+                    (destPos.y < this.topLimit) && 　
+                    (this.bottomLimit != this.topLimit)) {
+                    if (Math.round(this.node.y + MoveStep) > this.boundary.verticalMax) {
+                        var deltaY = Math.round(this.boundary.verticalMax - this.node.y);
+                    } else {
+                        var deltaY = MoveStep;
+                    }
+                } else {
+                    var deltaY = 0;
+                }
+                if (deltaX || deltaY) {
+                    this.node.stopAllActions();
+                    this.node.runAction(cc.moveBy(MoveTime / speed * deltaX / MoveStep, deltaX, 0));
+                    this.node.runAction(cc.moveBy(MoveTime / speed * deltaY / MoveStep, 0, deltaY));
                 }
                 break;
         }

@@ -1,16 +1,11 @@
-const MoveState = cc.Enum({
-    Stand: 0,
-    Up: 8,
-    Right: 6,
-    Down: 2,
-    Left: 4
-});
-const DirectionState = cc.Enum({
-    None: 0,
-    Up: 8,
-    Right: 6,
-    Down: 2,
-    Left: 4
+const RPG = require('Global');
+
+const MoveState = RPG.MoveState;
+const DirectionState = RPG.Direction;
+
+const MoveType = cc.Enum({
+    FOUR_DIRECTION: -1,
+    EIGHT_DIRECTION: 1
 });
 
 cc.Class({
@@ -26,6 +21,10 @@ cc.Class({
             type: cc.Node
         },
         speed: 300,
+        moveType: {
+            default: MoveType.FOUR_DIRECTION,
+            type: MoveType
+        },
         _listener: []
     },
 
@@ -76,18 +75,34 @@ cc.Class({
             }
             var angle = cc.pToAngle(this.actorDirection)
             var pi = 3.14;
-            if (pi / 4 <= angle && angle < 3 * pi / 4) {
+            if ((this.moveType === MoveType.FOUR_DIRECTION && (pi / 4 <= angle && angle < 3 * pi / 4)) ||
+                (this.moveType === MoveType.EIGHT_DIRECTION && (3 * pi / 8 <= angle && angle < 5 * pi / 8))) {
                 this.actorDirection = DirectionState.Up;
                 this.moveState = MoveState.Up;
-            } else if (3 * pi / 4 <= angle || angle < (-3) * pi / 4) {
+            } else if ((this.moveType === MoveType.FOUR_DIRECTION && (3 * pi / 4 <= angle || angle < (-3) * pi / 4)) ||
+                (this.moveType === MoveType.EIGHT_DIRECTION && (7 * pi / 8 <= angle || angle < (-7) * pi / 8))) {
                 this.actorDirection = DirectionState.Left;
                 this.moveState = MoveState.Left;
-            } else if ((-3) * pi / 4 <= angle && angle < pi / (-4)) {
+            } else if ((this.moveType === MoveType.FOUR_DIRECTION && ((-3) * pi / 4 <= angle && angle < pi / (-4))) ||
+                (this.moveType === MoveType.EIGHT_DIRECTION && ((-5) * pi / 8 <= angle && angle < 3 * pi / (-8)))) {
                 this.actorDirection = DirectionState.Down;
                 this.moveState = MoveState.Down;
-            } else {
+            } else if ((this.moveType === MoveType.FOUR_DIRECTION && (-pi / 4 <= angle && angle < pi / 4)) ||
+                (this.moveType === MoveType.EIGHT_DIRECTION && (-pi / 8 <= angle && angle < pi / 8))) {
                 this.actorDirection = DirectionState.Right;
                 this.moveState = MoveState.Right;
+            } else if (this.moveType === MoveType.EIGHT_DIRECTION && (pi / 8 <= angle && angle < 3 * pi / 8)) {
+                this.actorDirection = DirectionState.RightUp;
+                this.moveState = MoveState.RightUp;
+            } else if (this.moveType === MoveType.EIGHT_DIRECTION && (5 * pi / 8 <= angle && angle < 7 * pi / 8)) {
+                this.actorDirection = DirectionState.LeftUp;
+                this.moveState = MoveState.LeftUp;
+            } else if (this.moveType === MoveType.EIGHT_DIRECTION && ((-7) * pi / 8 <= angle && angle < (-5) * pi / 8)) {
+                this.actorDirection = DirectionState.LeftDown;
+                this.moveState = MoveState.LeftDown;
+            } else if (this.moveType === MoveType.EIGHT_DIRECTION) {
+                this.actorDirection = DirectionState.RightDown;
+                this.moveState = MoveState.RightDown;
             }
             this.broadcast();
         } else {
