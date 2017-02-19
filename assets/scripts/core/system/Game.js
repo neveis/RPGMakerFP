@@ -260,7 +260,7 @@ cc.Class({
      * @param {GameEvent} cb
      */
     playMapAnimation: function(clipName, wait, cb) {
-        var mapAnimation = this.map.node.getComponent(cc.Animation);
+        var mapAnimation = this.scene.map.node.getComponent(cc.Animation);
         if (mapAnimation == null) return;
         var clip;
         var clips = mapAnimation.getClips();
@@ -290,6 +290,7 @@ cc.Class({
     playAudioEffect: function(effectName, type, nextEvent) {
         this.audioManager.playEffect(effectName, type, nextEvent);
     },
+
     /**
      * !#zh
      * 开门动画，含音效
@@ -297,9 +298,8 @@ cc.Class({
      * @param {Number} firstGid 门左下角的GID
      * @param (Boolean) nextEvent
      */
-
     openDoor: function(doorPos, firstGid, nextEvent) {
-        this.map.openDoor(doorPos, firstGid, nextEvent);
+        this.scene.map.openDoor(doorPos, firstGid, nextEvent);
     },
 
     /**
@@ -397,7 +397,7 @@ cc.Class({
         }
 
         setTimeout(
-            () => { this.switchScene(mapId, currentPlayerId, playerPos, playerDirection, true) },
+            () => { this.switchScene(mapId, "1", playerPos, playerDirection, true) },
             2000);
     },
 
