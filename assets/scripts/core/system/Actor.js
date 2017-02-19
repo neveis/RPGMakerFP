@@ -415,16 +415,26 @@ cc.Class({
         } else if (this.direction === Direction.RightUp || this.direction === Direction.LeftUp) {
             this.direction = Direction.Up;
         }
-        if (this.checkEventThereTouch(direction)) {
-            return;
+
+        //判断是否会穿过墙角。例：右下移动，右边或下边不可通行时，就为有墙角。
+        if (direction === Direction.RightDown && (!this.map.tryToMove(this.getForwardPos(Direction.Right)) || (!this.map.tryToMove(this.getForwardPos(Direction.Down)))) ||
+            direction === Direction.LeftDown && (!this.map.tryToMove(this.getForwardPos(Direction.Left)) || (!this.map.tryToMove(this.getForwardPos(Direction.Down)))) ||
+            direction === Direction.RightUp && (!this.map.tryToMove(this.getForwardPos(Direction.Right)) || (!this.map.tryToMove(this.getForwardPos(Direction.Up)))) ||
+            direction === Direction.LeftUp && (!this.map.tryToMove(this.getForwardPos(Direction.Left)) || (!this.map.tryToMove(this.getForwardPos(Direction.Up))))
+        ) {
+            this.playerStop(direction)
         } else {
-            if (this.map.tryToMove(destPos)) {
-                //console.log('move');
-                this.playerMoveAnimation(direction, speed);
-                this.playerMoveAction(direction, speed);
-                this.map.moveMap(direction, destPos, speed);
+            if (this.checkEventThereTouch(direction)) {
+                return;
             } else {
-                this.playerStop(direction)
+                if (this.map.tryToMove(destPos)) {
+                    //console.log('move');
+                    this.playerMoveAnimation(direction, speed);
+                    this.playerMoveAction(direction, speed);
+                    this.map.moveMap(direction, destPos, speed);
+                } else {
+                    this.playerStop(direction)
+                }
             }
         }
     },

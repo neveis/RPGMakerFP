@@ -15,8 +15,11 @@ cc.Class({
         this.musicVolume = 0.3;
         this.effectVolume = 0.3;
         this.musicList = {};
+        this.preMusicList = {};
 
         var self = this;
+
+        //audioEngine bug
         cc.game.on(cc.game.EVENT_HIDE, function() {
             for (var key in self.musicList) {
                 cc.audioEngine.pause(self.musicList[key])
@@ -78,7 +81,8 @@ cc.Class({
         if (cb) cb.next();
     },
     resumeMusic: function(audioName, loop, cb) {
-        if (audioName in this.musicList) {
+        if (audioName in this.preMusicList) {
+            this.musicList[audioName] = this.preMusicList[audioName];
             cc.audioEngine.resume(this.musicList[audioName]);
         } else {
             this.playMusic(audioName, loop, null)
@@ -119,5 +123,10 @@ cc.Class({
 
     setEffectVolume: function(volume) {
         this.effectVolume = volume;
-    }
+    },
+
+    clearMusicList: function() {
+        this.preMusicList = this.musicList;
+        this.musicList = {};
+    },
 });

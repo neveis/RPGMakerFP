@@ -151,7 +151,7 @@ var gameEvent = cc.Class({
         this.event.target = target;
     },
     setChild: function(branchEvent) {
-        if (branchEvent instanceof gameEvent) {
+        if (branchEvent instanceof gameEvent || branchEvent == null) {
             this._child = branchEvent;
         }
     },

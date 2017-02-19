@@ -722,6 +722,7 @@ cc.Class({
 
     /**
      * 用于潜行系统，判断玩家是否在背后
+     * Type 102
      */
     checkBehind: function(detail, self) {
         let actorId = detail.actorId;

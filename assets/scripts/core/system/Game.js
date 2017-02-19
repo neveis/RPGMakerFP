@@ -153,7 +153,7 @@ cc.Class({
             //设置动态角色状态 *在scene中设置
             for (let i = 0; i < this.dynamicActorList.length; i++) {
                 let actorTarget = this.scene.getActorTarget(this.dynamicActorList[i].actorId);
-                actorTarget.setPos(this.dynamicActorList[i].pos);
+                actorTarget.setPos(this.dynamicActorList[i].pos, this.dynamicActorList[i].direction);
                 actorTarget.node.active = this.dynamicActorList[i].active;
             }
             //保证阻挡区域不会被误移除
@@ -427,6 +427,9 @@ cc.Class({
         //释放动态加载的资源
         //this.cache.releaseRes();
         this.eventManager.clearEvent();
+        //清除音乐列表
+        this.audioManager.clearMusicList();
+
         //hideUI;
         this.hideUI(['default'], true, false);
         if (this.gameMenu._isShown) {
@@ -442,7 +445,8 @@ cc.Class({
             dynamicActorList[i] = {
                 actorId: this.scene.dynamicActorList[i].actorId,
                 active: this.scene.dynamicActorList[i].node.active,
-                pos: this.scene.dynamicActorList[i].getPos()
+                pos: this.scene.dynamicActorList[i].getPos(),
+                direction: this.scene.dynamicActorList[i].direction
             }
         }
         this.mapInfo[this.currentMapId] = {
