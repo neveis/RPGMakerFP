@@ -71,7 +71,10 @@ cc.Class({
         let subEvent = this.options[optionIndex].subEvent
         let gameEvent = new GameEvent();
         gameEvent.setCallback(this.cb);
-        gameEvent.setTarget(this.cb.event.target);
+        if (this.cb instanceof GameEvent) {
+            gameEvent.setTarget(this.cb.event.target);
+            this.cb.setChild(gameEvent);
+        }
         this.dialogueComp.updataDisplay();
         this.options = null;
         this.game.hideUI(['default'], false, false);
