@@ -431,7 +431,11 @@ cc.Class({
                     //console.log('move');
                     this.playerMoveAnimation(direction, speed);
                     this.playerMoveAction(direction, speed);
-                    this.map.moveMap(direction, destPos, speed);
+
+                    //没有设置镜头跟随则移动地图保证人物在中央
+                    if (!this.map.node.getComponent('Camera')) {
+                        this.map.moveMap(direction, destPos, speed);
+                    }
                 } else {
                     this.playerStop(direction)
                 }
@@ -502,7 +506,7 @@ cc.Class({
     },
 
     /**
-     * 移动动画
+     * 移动动作
      */
     playerMoveAction: function(direction, speed) {
         speed = speed || 1;

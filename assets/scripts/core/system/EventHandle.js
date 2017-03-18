@@ -41,7 +41,8 @@ const EventType = cc.Enum({
     MoveRandomly: 33,
     MaintainEvent: 34,
     EventControl: 35,
-    Qmessage: 36
+    Qmessage: 36,
+    CameraAutoFollow: 37
 });
 
 const ConditionType = cc.Enum({
@@ -501,6 +502,15 @@ cc.Class({
             cc.log('can not find node');
             gameEvent.next();
         }
+    },
+
+    /**
+     * Type 37
+     * 设置镜头跟随
+     */
+    setCameraAutoFollow: function(detail, gameEvent) {
+        this.game.cameraFollowFlag = detail.flag;
+        gameEvent.next();
     },
 
     eventInterpreter: function(subEvent, gameEvent) {

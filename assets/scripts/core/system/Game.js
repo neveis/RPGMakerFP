@@ -24,6 +24,9 @@ cc.Class({
         this.lockUIFlag = false;
         this.loadingFlag = false;
 
+        //镜头自动跟随开关，事件中移动镜头需要先关闭。
+        this.cameraFollowFlag = true;
+
         this.loaded = false;
         //当前正在控制的角色ID，默认为ID = 1
         this.playerId = 1;
@@ -393,7 +396,7 @@ cc.Class({
         this.windowManager.showLoading(true, null);
         this.loadingFlag = true;
         if (this.gameMenu._isShown) {
-            this.gameMenu.clickHandleBar();
+            this.gameMenu.hide();
         }
 
         setTimeout(
@@ -433,7 +436,7 @@ cc.Class({
         //hideUI;
         this.hideUI(['default'], true, false);
         if (this.gameMenu._isShown) {
-            this.gameMenu.clickHandleBar();
+            this.gameMenu.hide();
         }
         cc.director.loadScene(MapList[destMapId]);
     },

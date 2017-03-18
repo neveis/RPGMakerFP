@@ -11,7 +11,11 @@ cc.Class({
             type: cc.SpriteAtlas
         },
         avatarAtlas: cc.SpriteAtlas,
-        sectorAtlas: cc.SpriteAtlas
+        sectorAtlas: cc.SpriteAtlas,
+        itemJson: {
+            default: null,
+            url: cc.RawAsset
+        }
     },
 
     // use this for initialization
@@ -20,17 +24,21 @@ cc.Class({
         this.balloonClip = [];
         this.itemTable = {};
         var self = this;
+
+
         //读取道具列表到缓存中
-        var fileName = "Global/Item";
-        cc.loader.loadRes(fileName, function(err, jsonData) {
-            if (err) {
-                cc.log(fileName, 'read error');
-                return;
-            }
-            cc.log("load item table");
-            self.itemTable = jsonData;
-            cc.loader.releaseRes(fileName);
-        });
+        //因为是必须读取文件，使用预加载
+        this.itemTable = cc.loader.getRes(this.itemJson);
+        // var fileName = "Global/Item";
+        // cc.loader.loadRes(fileName, function(err, jsonData) {
+        //     if (err) {
+        //         cc.log(fileName, 'read error');
+        //         return;
+        //     }
+        //     cc.log("load item table");
+        //     self.itemTable = jsonData;
+        //     cc.loader.releaseRes(fileName);
+        // });
     },
 
     getEmotionAtlas: function() {
