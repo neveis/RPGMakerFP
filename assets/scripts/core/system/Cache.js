@@ -1,3 +1,5 @@
+const ActionParse = require('ActionParse');
+
 cc.Class({
     extends: cc.Component,
 
@@ -15,6 +17,10 @@ cc.Class({
         itemJson: {
             default: null,
             url: cc.RawAsset
+        },
+        actorActionJson: {
+            default: null,
+            url: cc.RawAsset
         }
     },
 
@@ -23,12 +29,15 @@ cc.Class({
         this.releaseResList = [];
         this.balloonClip = [];
         this.itemTable = {};
+        this.actorAction = {};
         var self = this;
 
 
         //读取道具列表到缓存中
         //因为是必须读取文件，使用预加载
-        this.itemTable = cc.loader.getRes(this.itemJson);
+        if (this.itemJson) {
+            this.itemTable = cc.loader.getRes(this.itemJson);
+        }
         // var fileName = "Global/Item";
         // cc.loader.loadRes(fileName, function(err, jsonData) {
         //     if (err) {
@@ -39,6 +48,9 @@ cc.Class({
         //     self.itemTable = jsonData;
         //     cc.loader.releaseRes(fileName);
         // });
+        if (this.actorActionJson) {
+            this.actorAction = cc.loader.getRes(this.actorActionJson);
+        }
     },
 
     getEmotionAtlas: function() {
@@ -70,6 +82,15 @@ cc.Class({
 
     getItemInfo: function(itemId) {
         return this.itemTable[itemId];
+    },
+
+    getAction: function(actionTag) {
+        var actionConfig = this.actorAction[actionTag];
+        var action;
+        if (actionConfig) {
+            action = ActionParse(actionConfig);
+        }
+        return action;
     },
 
     releaseRes: function() {

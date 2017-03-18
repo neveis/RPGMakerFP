@@ -973,6 +973,23 @@ cc.Class({
         if (cb) cb.next();
     },
 
+    runAction: function(action, wait, cb) {
+        if (!action) {
+            console.log("无定义动作");
+            cb();
+            return;
+        }
+        if (wait) {
+            if (cb) {
+                this.node.runAction(cc.sequence(action, cc.callFunc(cb)));
+            } else {
+                this.node.runAction(action);
+            }
+        } else {
+            this.node.runAction(action);
+            if (cb) cb();
+        }
+    },
 
     onDisable: function() {
         this.removeEvent()

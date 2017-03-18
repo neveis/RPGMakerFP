@@ -42,7 +42,8 @@ const EventType = cc.Enum({
     MaintainEvent: 34,
     EventControl: 35,
     Qmessage: 36,
-    CameraAutoFollow: 37
+    CameraAutoFollow: 37,
+    ActorAction: 38
 });
 
 const ConditionType = cc.Enum({
@@ -513,6 +514,26 @@ cc.Class({
         gameEvent.next();
     },
 
+    /**
+     * Type 38
+     * 运行自定义角色动作
+     */
+    playActionAction: function(detail, gameEvent) {
+        var actionTag = detail.tag;
+        var wait = detail.wait;
+        var actorId = detail.actorId;
+
+        var target = this.game.scene.getActorTarget(actorId);
+        var action = this.game.cache.getAction(actionTag);
+        if (!action) {
+            console.log("没有定义动作: ", actionTag);
+            gameEvent.next();
+            return;
+        }
+        target.runAction(action, wait, gameEvent.next.bind(gameEvent))
+
+    },
+
     eventInterpreter: function(subEvent, gameEvent) {
         let detail = subEvent.detail;
         switch (subEvent.eventType) {
@@ -620,6 +641,12 @@ cc.Class({
                 break;
             case EventType.Qmessage:
                 this.showQmessage(detail, gameEvent);
+                break;
+            case EventType.CameraAutoFollow:
+                this.setCameraAutoFollow(detail, gameEvent);
+                break;
+            case EventType.ActorAction:
+                this.playActionAction(detail, gameEvent);
                 break;
             default:
                 console.log("no event type")
